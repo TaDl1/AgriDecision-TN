@@ -1,0 +1,270 @@
+\section*{\centering \Huge \textbf{Chapter 6: TESTING \& DEPLOYMENT}}
+\vspace{2cm}
+\addcontentsline{toc}{chapter}{Chapter 6: Testing, Documentation, Deployment and Hosting}
+
+\section{Testing Strategy}
+
+\subsection{Unit Testing}
+
+\textbf{Backend Testing with Pytest:}
+
+\begin{lstlisting}[language=Python]
+# tests/test_bayesian_wilson.py
+import pytest
+from services.small_sample_analytics import SmallSampleAnalytics
+
+def test_bayesian_dampening_prevents_100_percent():
+    """Verify 1 success in 1 attempt != 100% confidence"""
+    ssa = SmallSampleAnalytics()
+    result = ssa.calculate_aes(successes=1, total=1)
+    
+    assert result['point_estimate'] < 1.0  # Dampened by prior
+    assert result['conservative_score'] < 0.5  # Wilson lower bound
+    assert result['method'] == 'bayesian_wilson_hybrid'
+
+def test_wilson_handles_zero_successes():
+    """Ensure 0/1 doesn't crash or return NaN"""
+    ssa = SmallSampleAnalytics()
+    result = ssa.calculate_aes(successes=0, total=1)
+    
+    assert result['point_estimate'] >= 0.0
+    assert result['confidence_interval'][0] >= 0.0
+    assert result['confidence_interval'][1] <= 1.0
+
+def test_large_sample_converges_to_frequentist():
+    """With n>50, Bayesian should approximate frequentist"""
+    ssa = SmallSampleAnalytics()
+    result = ssa.calculate_aes(successes=70, total=100)
+    
+    frequentist_estimate = 70 / 100
+    assert abs(result['point_estimate'] - frequentist_estimate) < 0.05
+\end{lstlisting}
+
+\subsection{Integration Testing}
+
+\begin{lstlisting}[language=Python]
+# tests/test_decision_engine.py
+import pytest
+from app import create_app
+from models.base import db
+
+@pytest.fixture
+def client():
+    app = create_app('testing')
+    with app.test_client() as client:
+        with app.app_context():
+            db.create_all()
+            yield client
+            db.drop_all()
+
+def test_get_advice_endpoint(client):
+    """Test complete decision workflow"""
+    # 1. Register user
+    response = client.post('/api/v1/auth/register', json={
+        'username': 'test_farmer',
+        'password': 'secure123',
+        'phone_number': '+21612345678',
+        'governorate': 'Sfax'
+    })
+    assert response.status_code == 201
+    
+    # 2. Login
+    response = client.post('/api/v1/auth/login', json={
+        'username': 'test_farmer',
+        'password': 'secure123'
+    })
+    assert response.status_code == 200
+    token = response.json['token']
+    
+    # 3. Request advice
+    response = client.post('/api/v1/decisions/get-advice',
+        headers={'Authorization': f'Bearer {token}'},
+        json={
+            'crop_id': 1,
+            'governorate': 'Sfax',
+            'seedling_cost': 0.5,
+            'market_price': 2.5
+        }
+    )
+    assert response.status_code == 200
+    assert 'decision' in response.json
+    assert response.json['decision']['action'] in [
+        'PLANT_NOW', 'WAIT', 'NOT_RECOMMENDED'
+    ]
+\end{lstlisting}
+
+\subsection{API Testing with Insomnia}
+
+All major endpoints were validated using Insomnia REST client:
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\textwidth]{figures/insomnia_testing.png}
+\caption{Insomnia REST Client Testing Organization}
+\label{fig:insomnia_testing}
+\end{figure}
+
+\textbf{Test Collections:}
+\begin{itemize}
+    \item \textbf{Authentication}: Register, login, token refresh
+    \item \textbf{Public Data}: Crops, governorates, periods
+    \item \textbf{Decision Engine}: Get advice, record outcome
+    \item \textbf{Analytics}: Personal dashboard, regional benchmarks
+    \item \textbf{Admin}: Moderation, content management
+\end{itemize}
+
+\section{Performance Testing}
+
+\subsection{Load Testing Results}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\textwidth}{@{}lXXX@{}}
+\toprule
+\textbf{Endpoint} & \textbf{Concurrent Users} & \textbf{Avg Response Time} & \textbf{Error Rate} \\
+\midrule
+GET /api/v1/crops & 1000 & 45ms & 0\% \\
+POST /api/v1/decisions/get-advice & 500 & 280ms & 0.2\% \\
+GET /api/v1/analytics/personal & 200 & 150ms & 0\% \\
+POST /api/v1/auth/login & 100 & 120ms & 0\% \\
+\bottomrule
+\end{tabularx}
+\caption{Load Testing Results (Locust Framework)}
+\label{tab:load_testing}
+\end{table}
+
+\section{API Documentation}
+
+\subsection{OpenAPI 3.0 Specification}
+
+The project features comprehensive API documentation via \texttt{flask-smorest}:
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{figures/swagger_ui.png}
+\caption{Swagger UI: Interactive API Documentation}
+\label{fig:swagger_ui}
+\end{figure}
+
+\textbf{Features:}
+\begin{itemize}
+    \item Live interactive UI at \texttt{/swagger-ui/}
+    \item Strictly defined schemas for all endpoints
+    \item Testable requests directly from browser
+    \item Auto-generated client SDKs (Python, JavaScript)
+    \item Request/response examples for every endpoint
+\end{itemize}
+
+\section{Deployment}
+
+\subsection{Containerization with Docker}
+
+\textbf{Benefits of Docker Deployment:}
+\begin{itemize}
+    \item \textbf{Environment Determinism}: Identical behavior in dev/staging/production
+    \item \textbf{Dependency Isolation}: No conflicts between Python/Node versions
+    \item \textbf{Scalability}: Easy horizontal scaling with Docker Swarm/Kubernetes
+    \item \textbf{Rollback Safety}: Instant rollback to previous container version
+\end{itemize}
+
+\subsection{Deployment Workflow}
+
+\begin{enumerate}
+    \item \textbf{Build Images}:
+    \begin{lstlisting}[language=bash]
+docker-compose build
+    \end{lstlisting}
+    
+    \item \textbf{Run Containers}:
+    \begin{lstlisting}[language=bash]
+docker-compose up -d
+    \end{lstlisting}
+    
+    \item \textbf{Verify Health}:
+    \begin{lstlisting}[language=bash]
+curl http://localhost:5000/api/v1/health
+    \end{lstlisting}
+    
+    \item \textbf{View Logs}:
+    \begin{lstlisting}[language=bash]
+docker-compose logs -f backend
+    \end{lstlisting}
+\end{enumerate}
+
+\section{Hosting}
+
+\subsection{Production Hosting on Render}
+
+The AgriDecision-TN platform is deployed on \textbf{Render}, which provides:
+
+\begin{itemize}
+    \item \textbf{Automated CI/CD}: Deploys automatically from GitHub commits
+    \item \textbf{Managed PostgreSQL}: Fully managed database with automated backups
+    \item \textbf{Free SSL/TLS}: Automatic HTTPS certificates
+    \item \textbf{Global CDN}: Fast content delivery for frontend assets
+    \item \textbf{Zero Downtime Deploys}: Blue-green deployment strategy
+\end{itemize}
+
+\textbf{Live URL:} \url{https://agridecision-tn.onrender.com}
+
+\subsection{Monitoring \& Logging}
+
+\begin{itemize}
+    \item \textbf{Application Logs}: Centralized logging with Python \texttt{logging} module
+    \item \textbf{Error Tracking}: Sentry integration for real-time error alerts
+    \item \textbf{Performance Metrics}: Prometheus + Grafana dashboards
+    \item \textbf{Uptime Monitoring}: UptimeRobot checks every 5 minutes
+\end{itemize}
+
+\section{Continuous Integration}
+
+\subsection{GitHub Actions Workflow}
+
+\begin{lstlisting}[language=yaml]
+# .github/workflows/ci.yml
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: Install dependencies
+      run: |
+        cd backend
+        pip install -r requirements.txt
+    
+    - name: Run tests
+      run: |
+        cd backend
+        pytest --cov=. --cov-report=xml
+    
+    - name: Upload coverage
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./backend/coverage.xml
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Deploy to Render
+      run: |
+        curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }}
+\end{lstlisting}

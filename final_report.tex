@@ -1,0 +1,604 @@
+\documentclass[12pt,a4paper]{report}
+
+% =========================================================
+% PACKAGES & SETUP
+% =========================================================
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+\usepackage{graphicx}
+\usepackage{geometry}
+\geometry{top=1in, bottom=1in, left=1.25in, right=1in} % Updated geometry
+\usepackage{setspace}
+\setstretch{1.15}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{amsmath}
+\usepackage{tcolorbox}
+\usepackage{enumitem}
+\usepackage{multicol}
+
+% --- Arabic Support Note ---
+% To use Arabic text directly, uncomment the lines below and use XeLaTeX.
+% For standard pdfLaTeX, we use an image placeholder.
+% \usepackage{arabtex}
+% \setcode{utf8}
+
+% =========================================================
+% STYLING: COMPACT CHAPTERS (NO "CHAPTER X" LINE)
+% =========================================================
+\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{2}
+
+% Compact Chapter Format: "4. Title" instead of "Chapter 4 \n Title"
+\titleformat{\chapter}[hang]
+  {\normalfont\huge\bfseries}
+  {\thechapter.}{20pt}{\Huge}
+\titlespacing*{\chapter}{0pt}{50pt}{40pt}
+
+% Section Styling
+\titleformat{\section}
+  {\normalfont\Large\bfseries}
+  {\thesection.}{1em}{}
+\titlespacing*{\section}{0pt}{3.5ex plus 1ex minus .2ex}{2.3ex plus .2ex}
+
+\titleformat{\subsection}
+  {\normalfont\large\bfseries}
+  {\thesubsection}{1em}{}
+\titlespacing*{\subsection}{0pt}{2.5ex plus 1ex minus .2ex}{1.5ex plus .2ex}
+
+% =========================================================
+% HEADERS & FOOTERS
+% =========================================================
+\pagestyle{fancy}
+\fancyhf{}
+\setlength{\headheight}{15pt}
+\fancyhead[L]{IT325 Final Project Report}
+\fancyhead[R]{AgriDecision-TN: Bio-Climatic Atlas} 
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
+
+% =========================================================
+% HYPERLINKS
+% =========================================================
+\hypersetup{
+    colorlinks=true,
+    linkcolor=black,
+    citecolor=black,
+    urlcolor=blue
+}
+
+\begin{document}
+
+% =========================================================
+% TITLE PAGE
+% =========================================================
+\begin{titlepage}
+    \centering
+    \setlength{\parindent}{0pt}
+    
+    % --- Ministry Headers ---
+    \begin{minipage}[t]{0.45\textwidth}
+        \flushleft \small
+        Ministry of Higher\\
+        Education and\\
+        Scientific Research\\
+        University of Tunis\\
+        Tunis Business School
+    \end{minipage}
+    \hfill
+    \begin{minipage}[t]{0.1\textwidth}
+        \centering
+        % Placeholder for Logo
+        \rule{1.5cm}{1.5cm} 
+    \end{minipage}
+    \hfill
+    \begin{minipage}[t]{0.45\textwidth}
+        % Using placeholder for Arabic text to ensure compilation
+        \flushright \small
+        \textit{[Arabic Ministry Header]}\\
+        \textit{[University of Tunis]}\\
+        \textit{[Tunis Business School]}
+        % Uncomment below if using ArabTeX with known setup
+        % \RL{وزارة التعليم العالي والبحث العلمي...}
+    \end{minipage}
+    
+    \vspace{2.5cm}
+    
+    % --- Report Header Line ---
+    \hrule height 1pt
+    \vspace{0.4cm}
+    {\Large \textbf{IT325 FINAL PROJECT REPORT}}
+    \vspace{0.4cm}
+    \hrule height 1pt
+    
+    \vspace{1.5cm}
+    
+    % --- Main Title ---
+    {\Huge \textbf{AgriDecision-TN: The Geotemporal}}\\[0.3cm]
+    {\Huge \textbf{Bio-Climatic Atlas}}
+    \vspace{0.5cm}
+    \hrule height 0.5pt
+    
+    \vspace{2.5cm}
+    
+    % --- Author ---
+    {\Large Elaborated By:}\\[0.5cm]
+    {\Large \textbf{Mariem Mhadhbi}}
+    
+    \vspace{0.5cm}
+    {\large MAJOR: BUSINESS ANALYTICS}\\
+    {\large MINOR: INFORMATION TECHNOLOGY}
+    
+    \vspace{2.5cm}
+    
+    % --- Supervisor ---
+    {\large Supervisor: \textbf{Prof. Montassar Ben Messaoud}}
+    
+    \vfill
+    
+    % --- Year ---
+    {\large Academic year: 2025/2026}
+    
+\end{titlepage}
+
+% =========================================================
+% ABSTRACT
+% =========================================================
+\pagenumbering{roman}
+\setcounter{page}{1}
+
+\chapter*{Abstract}
+\addcontentsline{toc}{chapter}{Abstract}
+
+This report presents the design and implementation of AgriDecision-TN, a multidimensional digital platform dedicated to the prescriptive support of Tunisian smallholder farmers through the digitalization of intangible agrarian heritage. In the contemporary environment of rapid climate change, traditional planting calendars are increasingly detached from actual bioclimatic realities—a phenomenon defined here as "Thermal Lag." Existing agricultural tools often require expensive hardware or lack the regional cultural intelligence necessary for local smallholders.
+
+AgriDecision-TN addresses this limitation through a Geotemporal Bio-Climatic Atlas, enabling prescriptive advice to be explored across 24 governorates, multiple traditional agricultural eras (e.g., Smat, Gharien), and specific crop thresholds. The system is implemented using a Three-Tier Decoupled Architecture with Star Schema database modeling, advanced API orchestration, and containerized deployment via Docker. Through secure API design and Bayesian-Wilson statistical modeling, AgriDecision-TN transforms raw meteorological data into durable, actionable, and culturally relevant agricultural intelligence.
+
+\vspace{1cm}
+\noindent \textbf{Keywords:} Precision Agriculture, Digital Heritage Preservation, Bioclimatic Mapping, RESTful APIs, Software Architecture, Bayesian-Wilson Engine.
+
+\newpage
+\tableofcontents
+\newpage
+\listoffigures
+\listoftables
+\newpage
+
+% =========================================================
+% CONTENT CHAPTERS
+% =========================================================
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
+% Start at Chapter 4
+\setcounter{chapter}{3} 
+
+\chapter{Context Scope and Overview}
+
+The agricultural sector is a vital component of Tunisia's economy, contributing approximately 10\% to the national GDP and providing livelihoods for a significant portion of the rural population.
+
+Despite its importance, Tunisian agriculture faces severe challenges, including the "Thermal Lag" crisis—where traditional planting calendars no longer align with rapidly shifting climate profiles—and the lack of affordable precision tools for smallholder farmers.
+
+With over 500,000 small farms across the country, improving agricultural decision support is essential to enhancing productivity, ensuring food security, and maintaining the resilience of the local agrarian sector against climate volatility.
+
+\section*{Stakeholders}
+\begin{itemize}
+    \item \textbf{Smallholder Farmers:} Will benefit from accessible, high-precision planting and harvest advisories.
+    \item \textbf{Ministry of Agriculture:} Gains a digital framework to modernize rural extension services and monitor regional climate impacts.
+    \item \textbf{Agri-Tech Developers:} Create innovative, "No-Hardware" solutions tailored to the unique bioclimatic zones of Tunisia.
+\end{itemize}
+By addressing these challenges, the project seeks to enhance the overall decision-making experience and economic outcome for Tunisian agricultural producers.
+
+\section{Scope of the Project}
+This project aims to improve agricultural decision-making and climate adaptation, focusing on concept development and predictive logic rather than complex on-field hardware in its first version. With a focus on Tunisia, where precision agriculture support is often restricted by high equipment costs, it addresses key issues in climate-resilient farming without necessitating full-scale IoT sensor deployments.
+
+\section{Originality and Opportunities}
+This project introduces a Geotemporal Bio-Climatic Atlas and personalized prescriptive recommendations, a unique feature in Tunisia's agricultural landscape. By digitalizing the traditional Agrarian Calendar into machine-readable logic, the system forecasts optimal biological windows for various crops across all 24 governorates. It also includes a tool to find the nearest agricultural support agency, addressing the challenges of fragmented technical outreach. By improving the "Decision Experience," this application could set a new standard for localized Agri-Tech support, benefiting both government services and individual farmers.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{figures/bioclimatic_map.png}
+    \caption{Geotemporal Bio-Climatic Atlas: Map of 24 Governorates.}
+    \label{fig:map}
+\end{figure}
+
+\section{Comparative Innovation Matrix}
+To establish the technical superiority and originality of AgriDecision-TN, we conducted a feature-gap analysis against existing agricultural information sources.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\textwidth}{@{}l|c|c|c|X@{}}
+\toprule
+\textbf{Feature} & \textbf{Weather Apps} & \textbf{Calendars} & \textbf{Gov. Portals} & \textbf{AgriDecision-TN} \\ \midrule
+Prescriptive Advice & No & Partially & Yes & \textbf{Full (AI-Driven)} \\
+Historical Tracking & No & Yes & No & \textbf{Yes (Digitalized)} \\
+Geotemporal Mapping & Partially & No & Partially & \textbf{Full (Atlas Layer)} \\
+Resource Bundling & No & No & No & \textbf{Yes (Optimization)} \\
+Secure Moderation & No & No & Yes & \textbf{Yes (JWT/RBAC)} \\
+GRIB2 Parsing & No & No & No & \textbf{Yes (ECMWF)} \\ 
+\bottomrule
+\end{tabularx}
+\caption{Feature Comparison and Innovation Matrix}
+\end{table}
+
+\section{Chapter Summary}
+This chapter explored the project’s scope, originality, and opportunities, along with a review of similar solutions. The next chapter will cover the design and architecture of the web application.
+
+\chapter{Contribution and Design}
+\section{Overview of the System Design}
+\subsection{Purpose and Components}
+\noindent \textbf{Client-Side API (Presentation Logic):} Provides farmers and users with an interface to interact through routes like Login, Signup, Home, Decision History, Predictive Advice, and the Agricultural Agency Finder. It manages the presentation layer and converts farmer actions into structured API requests.
+
+\noindent \textbf{Server-Side API (Core Logic Layer):} Serves as the system’s backbone, providing endpoints for managing farmer profiles, agrarian thresholds, weather data logs, outcome histories, and agency coordinates. It manages the "Prescriptive Decision Engine" using RESTful principles to ensure stateless and scalable processing.
+
+\noindent \textbf{Database (Persistence Layer):} Stores critical project data, including farmer credentials, bioclimate outcomes, decision logs, agrarian calendars, and agency details. A PostgreSQL (PostGIS) database is used to handle the multidimensional and geospatial nature of the data.
+
+\noindent \textbf{Simulated Data (Validation Layer):} Due to the "Cold Start" problem in new agricultural zones, simulated data (1,200 outcomes) is used to prime the Bayesian engines. This mimics real-world climatic shocks and farmer outcomes to ensure functionality for predictive analytics.
+
+\subsection{System Flow}
+The following describes the overall system flow as shown in Figure \ref{fig:sysflow}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{figures/system_flow.png}
+    \caption{System Flow}
+    \label{fig:sysflow}
+\end{figure}
+
+\noindent \textbf{User (Farmer) Interactions}
+\begin{itemize}
+    \item \textbf{(a) User Access:} The farmer accesses the web application (1) and interacts with routes such as the Advisory Dashboard or History.
+    \item \textbf{(b) Server Requests:} Farmer actions trigger HTTP requests to the client-side API (2), which fetches necessary frontend resources (3).
+    \item \textbf{(c) Database Operations:} The API interacts with the database (3) to retrieve or update relevant records (4).
+    \item \textbf{(d) Response Delivery:} Data is processed and sent back to the client-side API (5), which renders the prescriptive advice.
+\end{itemize}
+
+\noindent \textbf{Admin Interactions}
+\begin{itemize}
+    \item \textbf{(a) Admin Access:} The administrator directly accesses the server-side API (1) to perform CRUD operations.
+    \item \textbf{(b) Database Operations:} The server-side API (2) interacts with the database (3) to update thresholds.
+    \item \textbf{(c) Response Delivery:} The API sends the operation results back to the admin (3).
+\end{itemize}
+\noindent \textbf{Simulated Data Integration:} Probabilistic simulation data is fed into the database by the admin.
+
+\section{Architectural Design}
+The system follows a three-tier decoupled architecture to ensure independent scaling and maintainability, as illustrated in Figure \ref{fig:arch}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{figures/architecture.png}
+    \caption{Three-Tier Decoupled Architecture}
+    \label{fig:arch}
+\end{figure}
+
+\subsection{Client-Side API Functionalities}
+The client-side manages the farmer's journey. After a secure login, users view their "Bio-Climatic Dashboard." The "Get Advice" button triggers the predictive logic, displaying a 7-day forecast, risk analysis, and "Plant/Wait" recommendations.
+
+\subsection{Server-Side API Functionalities}
+The server-side manages the "Heavy Lifting." It handles the Bilinear Interpolation of weather data, the Bayesian posterior updates for crop success rates, and the secure administration of user roles.
+
+\subsection{Database}
+The PostgreSQL database is optimized for time-series and geospatial data. It stores everything from farmer identities to 1km-resolution weather grids. Indexes on governorate IDs and crop types ensure the "Analytics Dashboard" remains performant.
+
+\subsection{Architectural Considerations}
+\begin{itemize}
+    \item \textbf{Scalability:} Decoupled frontend/backend allows for scaling the compute-heavy decision engine independently.
+    \item \textbf{Maintainability:} Small, modular services make it easy to update individual crop threshold logics.
+    \item \textbf{Usability:} A mobile-first design ensures farmers can access advice directly from the field.
+\end{itemize}
+
+\section{API Overview and Methodology}
+
+\subsection{API Endpoint Overview}
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\textwidth}{@{}l|l|X@{}}
+\toprule
+\textbf{Endpoint} & \textbf{Method} & \textbf{Description} \\ \midrule
+/login & POST & Authenticates farmer and initiates session. \\
+/signup & POST & Registers new farmer profile with metadata. \\
+/ & GET & Logic for the View Bioclimatic Dashboard. \\
+/predict & POST & Core service: Returns prescriptive planting advice. \\
+/history & GET & Retrieves the farmer's longitudinal logs. \\
+/find\_agency & POST & Returns coordinates of nearest agency. \\
+\bottomrule
+\end{tabularx}
+\caption{Client-Side API Endpoints}
+\end{table}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\textwidth}{@{}l|l|X@{}}
+\toprule
+\textbf{Endpoint} & \textbf{Method} & \textbf{Description} \\ \midrule
+/api/users & GET, DELETE & Admin management of the farmer database. \\
+/api/decisions & GET, POST & Bulk management of decision outcomes. \\
+/api/thresholds & PATCH & Dynamic update of crop biological thresholds. \\
+/api/agencies & GET, POST & Management of the agricultural agency network. \\
+\bottomrule
+\end{tabularx}
+\caption{Server-Side API Endpoints}
+\end{table}
+
+\subsection{Front-End Handling}
+The React-based frontend uses Axios Interceptors to manage JWT security tokens. It ensures that data like weather forecasts are only fetched after the user's location and crop choice are validated.
+
+\subsection{Reusability and Integration}
+The system integrates with the ECMWF ERA5 API for meteorological reanalysis and uses Leaflet.js for the geospatial mapping of extension agencies.
+
+\subsection{Error Handling}
+The system implements a dual-layer error handling strategy. The client-side provides immediate feedback via "Toast Notifications." The server-side enforces strict JSON Schema validation.
+
+\section{Database Design}
+The relationships are enforced via foreign keys with ON DELETE CASCADE rules. A detailed representation of the Star Schema is provided in Figure \ref{fig:db}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{figures/star_schema.png}
+    \caption{Database Class Diagram}
+    \label{fig:db}
+\end{figure}
+
+\subsection{Relational Database (RDB) Schema Details}
+Beyond the analytical Star Schema, the physical RDB implementation ensures high data normalization:
+\begin{itemize}
+    \item \textbf{Users Table:} Uses PBKDF2-SHA256 for credential storage.
+    \item \textbf{Periods Table:} Maps traditional Arabic nomenclature (Azara, Qorra) to ISO-standard date ranges.
+    \item \textbf{Agency Table:} Utilizes Decimal(9,6) precision for Latitude/Longitude coordinates.
+    \item \textbf{Composite Indexing:} B-Tree indexes are applied to the (governorate\_id, crop\_id) composite key.
+\end{itemize}
+
+\subsection{Data Collection}
+Data is sourced from three primary pillars:
+\begin{itemize}
+    \item \textbf{Meteorological:} Real-time and historical grids from ECMWF.
+    \item \textbf{Agrarian:} Expert-validated biological thresholds for Tunisian crops.
+    \item \textbf{Simulation:} 1,200 "Synthetic Outcomes" generated via Poisson distributions.
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{figures/analytics_pipeline.png}
+    \caption{Analytics Pipeline}
+\end{figure}
+
+\section{Chapter Summary}
+This chapter detailed the system’s design, focusing on the decoupled API architecture and the multidimensional data strategy. The next chapter will explore the technical implementation.
+
+\chapter{Implementation}
+\section{Setup and Application Construction}
+\subsection{Folder Structure}
+The project is organized into a modular hierarchy to ensure clean separation of concerns between the React-based frontend and the Flask-based backend, as shown in Figure \ref{fig:folder}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{figures/folder_structure.png}
+    \caption{Folder Hierarchy}
+    \label{fig:folder}
+\end{figure}
+
+\begin{itemize}
+    \item \textbf{backend/:} The core logic layer.
+    \item \textbf{frontend/:} The presentation layer.
+    \item \textbf{docker-compose.yml:} Orchestrates the multi-container environment.
+\end{itemize}
+
+\subsection{Libraries and Frameworks}
+The implementation leverages industry-standard libraries to ensure reliability:
+\begin{itemize}
+    \item \textbf{Flask:} Lightweight WSGI web framework.
+    \item \textbf{SQLAlchemy:} SQL Toolkit and ORM.
+    \item \textbf{Geopy:} Python client for geocoding web services.
+    \item \textbf{Pandas:} Data manipulation and analysis library.
+    \item \textbf{Leaflet.js:} Lead JavaScript library for maps.
+\end{itemize}
+
+\section{Database Creation and Data Simulation}
+\subsection{Database Creation}
+The schema is mapped using SQLAlchemy classes. Key models include: Farmer Model, Decision Model, Outcome Model, and AgrarianPeriod Model.
+
+\subsection{Data Simulation}
+To overcome the initial lack of historical data, we implemented a Probabilistic Simulation Pipeline. By sampling from Poisson and Normal distributions, we generated 1,200 synthetic farmer outcomes. This flow is visualized in Figure \ref{fig:sim}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{figures/simulation_flow.png}
+    \caption{Simulation Data Flow}
+    \label{fig:sim}
+\end{figure}
+
+\section{Front-End Implementation}
+The frontend is a single-page application built with React and Vite.
+
+\subsection{Figure 5: Frontend Interface Showcase}
+The user interface is designed with a "High-Prescription" aesthetic. (See Figure \ref{fig:ui})
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{figures/ui_wireframe.png}
+    \caption{Frontend Interface Showcase}
+    \label{fig:ui}
+\end{figure}
+
+\begin{itemize}
+    \item \textbf{Bioclimatic Dashboard:} Displays real-time humidity, thermal sums, and period status.
+    \item \textbf{Risk Heatmaps:} Visual representations of potential frost or drought risks.
+    \item \textbf{Museum-style Advice Cards:} Clean, high-density cards containing probabilities and advice.
+\end{itemize}
+
+\section{Implementation of Client-Side API Endpoints}
+Endpoints are secured via JWT.
+\begin{itemize}
+    \item \textbf{Auth Endpoints:} Manage secure registration.
+    \item \textbf{Advisory Endpoints:} \texttt{/predict} route for prescriptive advice.
+    \item \textbf{History Endpoints:} Enable tracking longitudinal performance.
+\end{itemize}
+
+\section{Implementation of Server-Side API Endpoints}
+The backend provides a comprehensive CRUD suite via \texttt{/api/v1/} routes.
+
+\section{External API Implementation}
+AgriDecision-TN integrates with the ECMWF API to parse GRIB2 binary weather streams. We calculate the nearest agricultural agency using the Haversine formula.
+
+\section{Advanced Security \& Orchestration}
+\noindent \textbf{Secure Moderation Layer:} The system implements a separate administrative portal where "Regional Moderators" can review and validate farmer outcome logs using RBAC.
+
+\noindent \textbf{Composite Resource Bundling:} To optimize mobile performance for farmers on 3G networks, the backend provides "Composite Bundles" to reduce round-trip latency.
+
+\section{Debugging and Testing}
+\begin{itemize}
+    \item \textbf{Flask Debug Mode:} Provided real-time tracebacks.
+    \item \textbf{Insomnia:} Used to validate JSON payloads.
+    \item \textbf{Pytest:} Implemented for core logic tests.
+\end{itemize}
+
+\section{Chapter Summary}
+This chapter detailed the build phase. The next chapter will discuss the security and validity of the system.
+
+\chapter{Threats to Validity}
+\section{Internal Validity Threats}
+\noindent \textbf{Implementation Errors:} The integration of async hooks with Flask occasionally introduced race conditions. Administrative credentials rely on PBKDF2-SHA256 which requires careful salt management.
+
+\noindent \textbf{Predictive Model Limitations:} The Bayesian-Wilson hybrid engine assumes a degree of independence between climatic variables which may not fully reflect reality.
+
+\noindent \textbf{Data Integrity Issues:} The core logic relies on 1,200 simulated harvest outcomes.
+
+\section{External Validity Threats}
+\noindent \textbf{Limited Data Variety:} The simulation dataset focuses on five primary crop types (e.g., Wheat, Olives).
+
+\noindent \textbf{Dependency Failures:} The system depends on the ECMWF ERA5 grid data (10km resolution).
+
+\noindent \textbf{Non-Realistic Environments:} Real-world performance on low-bandwidth rural mobile networks may differ from the containerized test environment.
+
+\section{Construct Validity Threats}
+\noindent \textbf{Measurement Errors:} Outcome monitoring relies on voluntary farmer feedback, prone to measurement bias.
+
+\noindent \textbf{Unaccounted Edge Cases:} "Irrigation-Assisted" farming was not fully integrated into the baseline "Thermal Sum" logic.
+
+\section{Conclusion and Mitigation Strategies}
+The identified threats involving data simulation, model linearity, and dependency resolution may impact initial scalability.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\textwidth}{@{}l|X|c@{}}
+\toprule
+\textbf{Threat} & \textbf{Key Mitigation} & \textbf{Priority} \\ \midrule
+Internal & Transition to Bcrypt for all user roles & High \\
+External & Grid-to-Farmhouse Interpolation Refinement & Medium \\
+Construct & Automated Outcome Verification via Satellites & Low \\
+\bottomrule
+\end{tabularx}
+\caption{Validity Threat Mitigation Matrix}
+\end{table}
+
+\section{Chapter Summary}
+This chapter explored the potential validity threats. The final section will provide the general conclusion.
+
+\chapter{Future Enhancements}
+\section{AI \& Decision Governance}
+\textbf{Predictive Model Evolution:} Transition from the Bayesian-Wilson hybrid to a Deep Learning Transformer-based model (LLM-Agronomy).
+\textbf{Automated Validation:} Integrate a satellite imagery feedback loop (Sentinel-2).
+
+\section{User Experience & Cultural Preservation}
+\textbf{Offline-First Presence:} Transition to a Progressive Web App (PWA).
+\textbf{Agri-Audio Heritage:} Add an audio playback feature for "Agrarian Proverbs".
+
+\section{Security & Integrity}
+\textbf{State-Level Hardening:} Implement Multi-Factor Authentication (TOTP).
+\textbf{Bot-Resistant Endpoints:} Protect routes with behavioral CAPTCHAs.
+
+\chapter{General Conclusion}
+This project set out to create a prescriptive agricultural web application aimed at providing a seamless "Digital Advisor" experience, helping Tunisian smallholders make informed planting decisions through accurate predictions of their future crop outcomes. By incorporating Bayesian-Wilson machine learning techniques, this application introduces a unique feature in Tunisia: the digitalization of the traditional Agrarian Calendar, enhancing both agricultural resilience and digital heritage preservation.
+
+The development process began with a thorough exploration of the project’s scope and bio-climatic design, followed by a detailed implementation phase that involved building decoupled client-side and server-side APIs, simulating 1,200 harvest outcomes, and integrating essential features such as GRIB2 weather parsing, error handling, and geospatial validation. Despite challenges with simulated data and the "Cold Start" constraints of new agricultural zones, the project successfully demonstrated its potential to address the "Thermal Lag" issues faced by Tunisian farmers.
+
+The current version of the AgriDecision-TN web application is only the first step in its development. It represents a robust proof of concept and serves as a technical foundation for numerous possible enhancements and future expansions. From integrating real-time IoT soil sensors to evolving the current hybrid engine into more advanced deep-learning models (e.g., Random Forests or LSTM), the project holds great potential for further growth and national scaling. The application remains an open, modular platform capable of incorporating a wide range of solutions to improve its prescriptive robustness and real-world applicability.
+
+In conclusion, this project presents an innovative, software-first approach to precision agriculture tailored to the specific bio-climatic and cultural needs of farmers in Tunisia. While this version has identified valid implementation limitations, it successfully lays the groundwork for future iterations that could introduce more sophisticated predictive analytics and broader regional support, addressing the evolving challenges of climate-resilient agriculture in the region.
+
+\chapter{References}
+\begin{enumerate}
+    \item Norman, D. A. (1988). The Design of Everyday Things. Basic Books. (Core principles for the farmer-centric UI/UX design).
+    \item Fielding, R. T. (2000). Architectural Styles and the Design of Network-based Software Architectures. Doctoral Dissertation, University of California, Irvine. (Foundational principles for the RESTful API design).
+    \item Luo, X., Tang, Y. (2016). Simulation Data Methods and Applications. Journal of Simulation, 32 (4), 123-134. (Methodology for the probabilistic harvest simulation).
+    \item Bishop, C. M. (2006). Pattern Recognition and Machine Learning. Springer. (Theoretical foundation for the Bayesian-Wilson hybrid engine).
+    \item Tang, J., Qu, M. (2014). Personalized Predictive Analytics. Proceedings of the ACM Conference on Web Search and Data Mining, 45-54. (Logic for the personalized prescriptive advice layer).
+    \item Richardson, L., Ruby, S. (2013). RESTful Web APIs. O’Reilly Media. (Implementation guide for the decoupled client/server interaction).
+    \item Hogan, P. (2008). Practical API Design: Confessions of a Java Framework Architect. Springer. (Strategies for building maintainable and scalable server-side endpoints).
+    \item Connolly, T., Begg, C. (2015). Database Systems: A Practical Approach to Design, Implementation, and Management. Pearson Education. (Best practices for the Star Schema and PostGIS relational modeling).
+    \item Luo, X., Tang, Y. (2016). Simulation-based analysis for predictive analytics. Journal of Simulation, 10(3), 157-173. (Validation techniques for synthetic agricultural datasets).
+    \item Bishop, C. M. (2006). Pattern Recognition and Machine Learning. Springer. (Advanced probability and distribution theory).
+\end{enumerate}
+
+\appendix
+\chapter{Appendices}
+
+\section{API Error Catalogue & Status Codes}
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\textwidth}{@{}l|l|X@{}}
+\toprule
+\textbf{HTTP Code} & \textbf{Status} & \textbf{Description} \\ \midrule
+200 & OK & Successful record retrieval or advice generation. \\
+201 & Created & New farmer account or decision outcome created. \\
+400 & Bad Request & Invalid input. \\
+401 & Unauthorized & Missing or invalid JWT Authorization header. \\
+403 & Forbidden & Access denied for restricted administrative routes. \\
+404 & Not Found & Requested governorate or crop data does not exist. \\
+422 & Unprocessable & Constraint violation. \\
+429 & Too Many & API Rate limit exceeded. \\
+500 & Internal Error & Backend failure during Bayesian computation. \\
+\bottomrule
+\end{tabularx}
+\caption{Complete list of HTTP status codes returned by AgriDecision-TN API}
+\end{table}
+
+\section{Authentication & Security Guide}
+\noindent \textbf{JWT-Based Authentication Flow}
+\begin{enumerate}
+    \item Farmer submits credentials to \texttt{/api/v1/auth/login}.
+    \item Backend verifies hashed credentials (Bcrypt).
+    \item A JWT access token (valid for 1h) is issued.
+    \item The token is included in all subsequent requests via \texttt{Authorization: Bearer <token>}.
+    \item Expired tokens trigger a 401 response, prompting the UI to refresh.
+\end{enumerate}
+
+\noindent \textbf{Sensitive Data Handling}
+\begin{itemize}
+    \item Passwords: Salted and hashed using Bcrypt (or PBKDF2).
+    \item Secrets: All sensitive keys are stored in a \texttt{.env} file.
+\end{itemize}
+
+\section{Bayesian Engine Architecture}
+The platform utilizes a Bayesian-Wilson Hybrid Engine.
+\noindent \textbf{Core Logic Sample (Pseudo-Code)}
+\begin{verbatim}
+{
+  "prior": "1,200 simulated outcomes",
+  "posterior": "Real-time ECMWF weather data",
+  "confidence": "Wilson Score Interval (95%)",
+  "explanation": "Calculation based on Thermal Sum (GDD) thresholds..."
+}
+\end{verbatim}
+
+\noindent \textbf{Prompt-to-Advice Mapping}
+\begin{itemize}
+    \item \textbf{Input:} "Wheat", "Sidi Bouzid", "January".
+    \item \textbf{Logic:} Calculate deviation from historical Azara window.
+    \item \textbf{Output:} "Plant NOW (Confidence: 89\%). Deviation: +4 days."
+\end{itemize}
+
+\end{document}

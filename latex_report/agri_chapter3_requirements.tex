@@ -1,0 +1,207 @@
+\section*{\centering \Huge \textbf{Chapter 3: REQUIREMENTS \& ARCHITECTURE}}
+\vspace{2cm}
+\addcontentsline{toc}{chapter}{Chapter 3: Requirements, Architecture and Data Design}
+
+\section{Functional Requirements}
+
+\subsection{Core Decision Support Features}
+\begin{enumerate}
+    \item \textbf{FR1 - Geotemporal Advisory}: Filter agricultural advice by governorate (24 options) and agrarian period (12 windows)
+    \item \textbf{FR2 - Risk-Adjusted Recommendations}: Provide binary "Plant/Wait" decisions with confidence intervals and wait-day calculations
+    \item \textbf{FR3 - Crop Suitability Ranking}: Display Regional Crop Performance Scores (RCPS) for all crop-governorate combinations
+    \item \textbf{FR4 - Outcome Tracking}: Allow farmers to record planting decisions and harvest outcomes (success/failure/partial)
+    \item \textbf{FR5 - Analytics Dashboard}: Visualize personal success rates, regional benchmarks, and trend analysis
+    \item \textbf{FR6 - Historical Simulation}: Enable retrospective "what-if" analysis using ERA5 reanalysis data
+\end{enumerate}
+
+\subsection{Administrative Features}
+\begin{enumerate}
+    \item \textbf{FR7 - Data Moderation}: Secure admin panel for validating user-submitted outcomes
+    \item \textbf{FR8 - Privacy Management}: Farmer-controlled data sharing settings (4-level framework)
+    \item \textbf{FR9 - System Monitoring}: Real-time API performance metrics and error logging
+    \item \textbf{FR10 - Content Management}: CRUD operations for crops, periods, and agrarian rules
+\end{enumerate}
+
+\section{Non-Functional Requirements}
+
+\subsection{Performance Requirements}
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\textwidth}{@{}lXX@{}}
+\toprule
+\textbf{Metric} & \textbf{Target} & \textbf{Measurement Method} \\
+\midrule
+API Response Time (p95) & <200ms & Prometheus monitoring \\
+Database Query Time & <50ms & PostgreSQL EXPLAIN ANALYZE \\
+External API Calls & <300ms & Request timeout configuration \\
+Mobile Data Usage & <5MB/month & Network traffic analysis \\
+Concurrent Users & 10,000 & Load testing with Locust \\
+\bottomrule
+\end{tabularx}
+\caption{Performance Requirements and Targets}
+\label{tab:performance_req}
+\end{table}
+
+\subsection{Security Requirements}
+\begin{itemize}
+    \item \textbf{NFR4 - Authentication}: JWT-based stateless authentication with 24-hour token expiry
+    \item \textbf{NFR5 - Encryption}: AES-256 for data at rest, TLS 1.3 for data in transit
+    \item \textbf{NFR6 - Privacy}: Differential privacy guarantees ($\epsilon$=0.5) for aggregated analytics
+    \item \textbf{NFR7 - Input Validation}: Marshmallow schema validation prevents injection attacks
+    \item \textbf{NFR8 - Rate Limiting}: 500 requests/hour for voting, 20/hour for AI endpoints
+\end{itemize}
+
+\subsection{Reliability Requirements}
+\begin{itemize}
+    \item \textbf{NFR9 - Availability}: 99.5\% uptime during critical planting seasons (March-May, October-November)
+    \item \textbf{NFR10 - Data Integrity}: PostgreSQL ACID compliance with automated daily backups
+    \item \textbf{NFR11 - Error Handling}: Graceful degradation if ECMWF API unavailable (fallback to cached forecasts)
+    \item \textbf{NFR12 - Disaster Recovery}: Database replication with 15-minute RPO (Recovery Point Objective)
+\end{itemize}
+
+\section{System Architecture}
+
+AgriDecision-TN implements a \textbf{Three-Tier Decoupled Architecture} to ensure maintainability, scalability, and security.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/system_architecture.png}
+\caption{Three-Tier System Architecture with Axios Interceptor Bridge}
+\label{fig:system_architecture}
+\end{figure}
+
+\subsection{Presentation Layer (React 18 + Vite)}
+\textbf{Responsibilities}:
+\begin{itemize}
+    \item User interface rendering and interaction
+    \item State management (React Context API)
+    \item Client-side routing (React Router v6)
+    \item Data visualization (Recharts for analytics, Leaflet.js for maps)
+\end{itemize}
+
+\textbf{Key Technologies}:
+\begin{itemize}
+    \item \texttt{axios}: HTTP client with interceptor for JWT token injection
+    \item \texttt{framer-motion}: Smooth animations for enhanced UX
+    \item \texttt{react-leaflet}: Interactive Tunisia governorate map
+    \item \texttt{lucide-react}: Consistent iconography
+    \item \texttt{tailwindcss}: Utility-first CSS framework
+\end{itemize}
+
+\subsection{Logic Layer (Python Flask)}
+\textbf{Responsibilities}:
+\begin{itemize}
+    \item Business logic execution (Bayesian-Wilson calculations)
+    \item API endpoint routing and request handling
+    \item Authentication and authorization (JWT)
+    \item Data validation (Marshmallow schemas)
+    \item ECMWF data integration and processing
+\end{itemize}
+
+\textbf{Key Technologies}:
+\begin{itemize}
+    \item \texttt{Flask 3.0}: Python web framework
+    \item \texttt{Flask-RESTful}: RESTful API framework
+    \item \texttt{Flask-JWT-Extended}: Stateless authentication
+    \item \texttt{Marshmallow}: Request/response serialization
+    \item \texttt{SQLAlchemy}: ORM for database abstraction
+    \item \texttt{scipy.stats}: Statistical computations (Beta distribution, Wilson intervals)
+\end{itemize}
+
+\subsection{Persistence Layer (PostgreSQL)}
+\textbf{Responsibilities}:
+\begin{itemize}
+    \item Relational data storage with ACID guarantees
+    \item Spatial queries (PostGIS extension for governorate geometries)
+    \item Temporal data management (agrarian periods, historical weather)
+    \item Analytics aggregation (materialized views for performance)
+\end{itemize}
+
+\section{Data Modeling}
+
+\subsection{Star Schema Design}
+
+We implement a \textbf{Multi-Dimensional Star Schema} optimized for analytical queries:
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{figures/database_schema.png}
+\caption{Star Schema: Fact Table (Decisions) with Dimension Tables}
+\label{fig:database_schema}
+\end{figure}
+
+\subsubsection{Fact Table: \texttt{decisions}}
+Central table storing farmer planting decisions and outcomes:
+\begin{itemize}
+    \item \texttt{id} (PK): Unique decision identifier
+    \item \texttt{farmer\_id} (FK): References \texttt{farmers} table
+    \item \texttt{crop\_id} (FK): References \texttt{crops} dimension
+    \item \texttt{governorate\_id} (FK): References \texttt{governorates} dimension
+    \item \texttt{agrarian\_period\_id} (FK): References \texttt{agrarian\_periods} dimension
+    \item \texttt{decision\_date}: Timestamp of planting decision
+    \item \texttt{recommendation}: System advisory ("PLANT\_NOW", "WAIT", "NOT\_RECOMMENDED")
+    \item \texttt{confidence}: Bayesian-Wilson confidence score (HIGH/MEDIUM/LOW)
+    \item \texttt{outcome}: Farmer-reported result ("success", "failure", "partial", "pending")
+    \item \texttt{yield\_kg\_ha}: Actual yield (if reported)
+\end{itemize}
+
+\subsubsection{Dimension Tables}
+\textbf{1. \texttt{governorates}} (24 rows):
+\begin{itemize}
+    \item Spatial data: Polygon geometries (PostGIS)
+    \item Bioclimatic zone classification (6 zones)
+    \item Climate parameters: Average rainfall, temperature ranges
+\end{itemize}
+
+\textbf{2. \texttt{agrarian\_periods}} (12 rows):
+\begin{itemize}
+    \item Traditional names (Arabic + French + English)
+    \item Date ranges (start\_month, start\_day, end\_month, end\_day)
+    \item Thermal thresholds: Min/max temperatures, GDD requirements, frost probability
+\end{itemize}
+
+\textbf{3. \texttt{crops}} (15 rows):
+\begin{itemize}
+    \item Crop metadata: Scientific name, local name (Derja), category
+    \item Frost sensitivity thresholds (0-2°C)
+    \item Growing degree day (GDD) requirements
+\end{itemize}
+
+\textbf{4. \texttt{farmers}} (User accounts):
+\begin{itemize}
+    \item Authentication: Hashed passwords (PBKDF2-SHA256)
+    \item Privacy settings: 4-level consent framework
+    \item Profile: Governorate, farm type, phone number
+\end{itemize}
+
+\subsection{Normalization Strategy}
+The schema adheres to \textbf{Third Normal Form (3NF)} to prevent data redundancy:
+\begin{itemize}
+    \item Crop characteristics stored once in \texttt{crops} table (not duplicated per decision)
+    \item Governorate climate data centralized (not repeated for each farmer)
+    \item Agrarian period definitions standardized (consistent across all users)
+\end{itemize}
+
+\section{UML Structural Analysis}
+
+\subsection{Key Relationships}
+\begin{enumerate}
+    \item \textbf{Contextual Association}: \texttt{Decision} $\rightarrow$ \texttt{Crop}, \texttt{Governorate}, \texttt{AgrarianPeriod}
+    \begin{itemize}
+        \item Enforces 3NF by separating cultural metadata
+        \item Enables efficient filtering and aggregation
+    \end{itemize}
+    
+    \item \textbf{Composition}: \texttt{Decision} $\diamondsuit$ \texttt{Outcome}
+    \begin{itemize}
+        \item Strong ownership: Outcomes cannot exist without parent decision
+        \item Cascading delete ensures data integrity
+    \end{itemize}
+    
+    \item \textbf{Service Dependency}: \texttt{DecisionEngine} $\dashrightarrow$ \texttt{ECMWFService}
+    \begin{itemize}
+        \item Loose coupling: Core logic independent of external API
+        \item Stateless design: No persistent connection to ECMWF
+    \end{itemize}
+\end{enumerate}

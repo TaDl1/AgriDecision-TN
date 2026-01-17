@@ -1,0 +1,23 @@
+\section*{\centering \Huge \textbf{ABSTRACT}} 
+
+\vspace{2cm}
+
+This report presents the design and implementation of \textbf{AgriDecision-TN}, a comprehensive Decision Support System (DSS) addressing the critical challenge of \textit{thermal decoupling} in Tunisian agriculture. As climate change accelerates (+1.5°C since the 1970s), traditional planting periods from the Tunisian Agrarian Calendar no longer align with contemporary thermal optima, creating a 10-14 day lag that results in significant crop losses affecting 400,000 smallholder farmers.
+
+The system implements a novel \textbf{Bayesian-Wilson Hybrid Engine} that combines Beta-Binomial priors ($\alpha=\beta=2$) with Wilson Score Intervals to provide risk-averse planting advisories under sparse-data conditions typical of smallholder agriculture (n<10 historical decisions). Unlike hardware-dependent IoT solutions requiring TND 1,200+/hectare capital investment, AgriDecision-TN adopts a \textbf{software-first architecture} leveraging ECMWF ERA5 meteorological data at zero hardware cost, ensuring accessibility for 85\% of Tunisian farmers with smartphone penetration.
+
+The platform is built using a \textbf{Three-Tier Decoupled Architecture}: React 18 frontend with mobile-first Progressive Web App (PWA) capabilities, Flask 3.0 RESTful API backend with comprehensive endpoint orchestration, and PostgreSQL database implementing Star Schema for multidimensional analytics. The system integrates 12 digitized agrarian windows with machine-readable thermal thresholds (GDD requirements, frost probability, soil moisture), implements JWT-based authentication with role-based access control, and proposes a comprehensive \textbf{differential privacy framework} ($\epsilon$=0.5) ensuring farmer data sovereignty through 4-level privacy tiers.
+
+Retrospective simulation using ERA5 reanalysis data (2018-2024) demonstrates \textbf{21.9\% potential reduction} in avoidable frost losses across 137 documented historical events, with F1-score of 0.81 on simulated 1,200 outcome dataset and projected economic savings of TND 3,512/hectare. The system features complete mobile interface visualization optimized for rural connectivity (<5MB/month data usage), comprehensive analytics dashboard calculating Advice Effectiveness Score (AES), Risk Avoidance ROI (RAR), and Confidence Validation Score (CVS), and containerized deployment with Docker for production scalability.
+
+The API implements advanced optimization techniques including composite endpoints to eliminate N+1 query problems, rate limiting (500 requests/hour for voting, 20/hour for AI endpoints), and graceful degradation with cached forecasts for offline functionality. Integration with OpenWeatherMap API provides 7-day governorate-specific forecasts, while the platform's Swagger/OpenAPI 3.0 documentation ensures developer-friendly API consumption for potential B2B integrations with agricultural insurance companies and agtech startups.
+
+Ultimately, this project demonstrates the power of modern web technologies in preserving intangible cultural heritage (traditional agrarian knowledge) while adapting it to contemporary climate realities, ensuring the legacy of Tunisian agricultural wisdom endures for generations to come through equitable, data-sovereign, and scientifically rigorous decision support.
+
+\vspace{1cm}
+
+\textbf{Keywords:} Agricultural Informatics, Decision Support Systems, Bayesian Statistics, Climate Adaptation, RESTful APIs, Differential Privacy, Software Architecture, Cultural Heritage Preservation, Sparse Data Analytics, Progressive Web Apps
+
+\vspace{3cm}
+
+\addcontentsline{toc}{chapter}{Abstract}

@@ -1,0 +1,100 @@
+﻿2026-01-04 21:54:51,650 - __main__ - INFO - Application started in development mode
+2026-01-04 21:54:57,967 - __main__ - INFO - Database tables created successfully
+2026-01-04 21:54:58,208 - __main__ - INFO - Database seeded successfully
+2026-01-04 21:54:58,209 - __main__ - INFO - Application started in development mode
+2026-01-04 21:57:06,418 - __main__ - INFO - Database tables created successfully
+2026-01-04 21:57:06,754 - __main__ - INFO - Database seeded successfully
+2026-01-04 21:57:06,763 - __main__ - INFO - Application started in development mode
+2026-01-04 21:57:15,044 - __main__ - INFO - Database tables created successfully
+2026-01-04 21:57:15,295 - __main__ - INFO - Database seeded successfully
+2026-01-04 21:57:15,301 - __main__ - INFO - Application started in development mode
+2026-01-04 21:57:24,566 - __main__ - INFO - Database tables created successfully
+2026-01-04 21:57:24,836 - __main__ - INFO - Database seeded successfully
+2026-01-04 21:57:24,837 - __main__ - INFO - Application started in development mode
+2026-01-04 21:57:25,532 - __main__ - INFO - Database tables created successfully
+2026-01-04 21:57:25,932 - __main__ - INFO - Database seeded successfully
+2026-01-04 21:57:25,934 - __main__ - INFO - Application started in development mode
+2026-01-04 21:57:37,264 - app - INFO - Database tables created successfully
+2026-01-04 21:57:37,523 - app - INFO - Database seeded successfully
+2026-01-04 21:57:37,525 - app - INFO - Application started in development mode
+2026-01-04 21:57:37,611 - app - INFO - Database tables created successfully
+2026-01-04 21:57:38,038 - app - INFO - Database seeded successfully
+2026-01-04 21:57:38,040 - app - INFO - Application started in testing mode
+2026-01-04 21:57:38,245 - requests - INFO - POST /api/auth/register from 127.0.0.1
+2026-01-04 21:57:40,257 - performance - WARNING - SLOW REQUEST: POST /api/auth/register took 2.01s
+2026-01-04 21:57:40,275 - requests - INFO - POST /api/auth/register - 201 - 2.011s
+2026-01-04 21:57:40,348 - requests - INFO - POST /api/auth/login from 127.0.0.1
+2026-01-04 21:57:43,446 - performance - WARNING - SLOW REQUEST: POST /api/auth/login took 3.09s
+2026-01-04 21:57:43,485 - requests - INFO - POST /api/auth/login - 200 - 3.085s
+2026-01-04 21:57:43,579 - requests - INFO - POST /api/decisions/get-advice from 127.0.0.1
+2026-01-04 21:57:43,591 - requests - INFO - POST /api/decisions/get-advice - 422 - 0.004s
+2026-01-04 21:57:43,630 - requests - INFO - POST /api/decisions/get-advice from 127.0.0.1
+2026-01-04 21:57:43,775 - requests - INFO - POST /api/decisions/get-advice - 422 - 0.127s
+2026-01-04 21:57:43,895 - requests - INFO - POST /api/decisions/get-advice from 127.0.0.1
+2026-01-04 21:57:44,293 - requests - INFO - POST /api/decisions/get-advice - 200 - 0.382s
+2026-01-04 21:57:44,463 - requests - INFO - GET /api/decisions/history from 127.0.0.1
+2026-01-04 21:57:44,566 - app - ERROR - Unexpected error: 'Decision' object has no attribute 'period'
+Traceback (most recent call last):
+  File "D:\AgriDecision-TN\venv\Lib\site-packages\flask\app.py", line 1484, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "D:\AgriDecision-TN\venv\Lib\site-packages\flask\app.py", line 1469, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "D:\AgriDecision-TN\venv\Lib\site-packages\flask_jwt_extended\view_decorators.py", line 170, in decorator
+    return current_app.ensure_sync(fn)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "D:\AgriDecision-TN\backend\utils\decorators.py", line 53, in decorated_function
+    result = f(*args, **kwargs)
+  File "D:\AgriDecision-TN\backend\api\decisions.py", line 113, in get_history
+    'period_name': d.period.name if d.period else None
+                                    ^^^^^^^^
+AttributeError: 'Decision' object has no attribute 'period'
+2026-01-04 21:57:44,664 - requests - INFO - GET /api/decisions/history - 500 - 0.131s
+2026-01-04 21:57:45,125 - requests - INFO - GET /api/decisions/history from 127.0.0.1
+2026-01-04 21:57:45,582 - requests - INFO - GET /api/decisions/history - 422 - 0.400s
+2026-01-04 21:58:23,915 - __main__ - INFO - Database tables created successfully
+2026-01-04 21:58:24,267 - __main__ - INFO - Database seeded successfully
+2026-01-04 21:58:24,277 - __main__ - INFO - Application started in development mode
+2026-01-04 21:58:27,339 - __main__ - INFO - Database tables created successfully
+2026-01-04 21:58:27,715 - __main__ - INFO - Database seeded successfully
+2026-01-04 21:58:27,717 - __main__ - INFO - Application started in development mode
+2026-01-04 21:58:29,968 - app - INFO - Database tables created successfully
+2026-01-04 21:58:30,131 - app - INFO - Database seeded successfully
+2026-01-04 21:58:30,132 - app - INFO - Application started in development mode
+2026-01-04 21:58:30,177 - app - INFO - Database tables created successfully
+2026-01-04 21:58:30,401 - app - INFO - Database seeded successfully
+2026-01-04 21:58:30,404 - app - INFO - Application started in testing mode
+2026-01-04 21:58:30,564 - requests - INFO - POST /api/auth/register from 127.0.0.1
+2026-01-04 21:58:31,534 - requests - INFO - POST /api/auth/register - 201 - 0.968s
+2026-01-04 21:58:31,547 - requests - INFO - POST /api/auth/login from 127.0.0.1
+2026-01-04 21:58:32,356 - requests - INFO - POST /api/auth/login - 200 - 0.803s
+2026-01-04 21:58:32,361 - requests - INFO - POST /api/decisions/get-advice from 127.0.0.1
+2026-01-04 21:58:32,364 - requests - INFO - POST /api/decisions/get-advice - 422 - 0.002s
+2026-01-04 21:58:32,367 - requests - INFO - POST /api/decisions/get-advice from 127.0.0.1
+2026-01-04 21:58:32,389 - requests - INFO - POST /api/decisions/get-advice - 422 - 0.021s
+2026-01-04 21:58:32,395 - requests - INFO - POST /api/decisions/get-advice from 127.0.0.1
+2026-01-04 21:58:32,700 - requests - INFO - POST /api/decisions/get-advice - 200 - 0.301s
+2026-01-04 21:58:32,705 - requests - INFO - GET /api/decisions/history from 127.0.0.1
+2026-01-04 21:58:32,739 - app - ERROR - Unexpected error: 'Decision' object has no attribute 'period'
+Traceback (most recent call last):
+  File "D:\AgriDecision-TN\venv\Lib\site-packages\flask\app.py", line 1484, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "D:\AgriDecision-TN\venv\Lib\site-packages\flask\app.py", line 1469, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "D:\AgriDecision-TN\venv\Lib\site-packages\flask_jwt_extended\view_decorators.py", line 170, in decorator
+    return current_app.ensure_sync(fn)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "D:\AgriDecision-TN\backend\utils\decorators.py", line 53, in decorated_function
+    result = f(*args, **kwargs)
+  File "D:\AgriDecision-TN\backend\api\decisions.py", line 113, in get_history
+    'period_name': d.period.name if d.period else None
+                                    ^^^^^^^^
+AttributeError: 'Decision' object has no attribute 'period'
+2026-01-04 21:58:32,755 - requests - INFO - GET /api/decisions/history - 500 - 0.048s
+2026-01-04 21:58:32,763 - requests - INFO - GET /api/decisions/history from 127.0.0.1
+2026-01-04 21:58:32,769 - requests - INFO - GET /api/decisions/history - 422 - 0.005s
+2026-01-04 22:01:28,560 - requests - INFO - GET /api/crops/ from 127.0.0.1
+2026-01-04 22:01:28,762 - requests - INFO - GET /api/crops/ - 200 - 0.175s
+2026-01-04 22:01:28,903 - requests - INFO - GET /api/crops/ from 127.0.0.1
+2026-01-04 22:01:29,023 - requests - INFO - GET /api/crops/ - 200 - 0.097s

@@ -1,0 +1,286 @@
+\section*{\centering \Huge \textbf{Chapter 4: API DESIGN}}
+\vspace{2cm}
+\addcontentsline{toc}{chapter}{Chapter 4: API Design and Endpoint Architecture}
+
+\section{API Design Philosophy}
+
+AgriDecision-TN implements a \textbf{RESTful API} following industry best practices:
+\begin{itemize}
+    \item \textbf{Resource-Oriented URLs}: Nouns represent entities (\texttt{/crops}, \texttt{/decisions})
+    \item \textbf{HTTP Verbs}: GET (read), POST (create), PUT (update), DELETE (remove)
+    \item \textbf{Stateless Design}: No server-side sessions, JWT tokens for authentication
+    \item \textbf{JSON Standardization}: All requests/responses use JSON format
+    \item \textbf{Versioning}: \texttt{/api/v1/} prefix for backward compatibility
+\end{itemize}
+
+\section{Endpoint Architecture}
+
+\subsection{Global \& Content Layer}
+
+\begin{table}[H]
+\centering
+\small
+\renewcommand{\arraystretch}{1.5}
+\begin{tabularx}{\textwidth}{@{}llX@{}}
+\toprule
+\textbf{Method} & \textbf{Endpoint} & \textbf{Description} \\
+\midrule
+GET & \texttt{/api/v1/crops} & Retrieve all supported crops (15 total) \\
+GET & \texttt{/api/v1/crops/\{id\}} & Get specific crop details with thermal thresholds \\
+GET & \texttt{/api/v1/governorates} & List all 24 Tunisian governorates with bioclimatic zones \\
+GET & \texttt{/api/v1/periods} & Fetch 12 agrarian periods with date ranges \\
+GET & \texttt{/api/v1/health} & System health check (uptime, database status) \\
+\bottomrule
+\end{tabularx}
+\caption{Global \& Content Layer Endpoints}
+\label{tab:global_endpoints}
+\end{table}
+
+\subsection{Decision Engine Layer}
+
+\begin{table}[H]
+\centering
+\small
+\renewcommand{\arraystretch}{1.5}
+\begin{tabularx}{\textwidth}{@{}llX@{}}
+\toprule
+\textbf{Method} & \textbf{Endpoint} & \textbf{Description} \\
+\midrule
+POST & \texttt{/api/v1/decisions/get-advice} & Request planting advisory \\
+ & & \textit{Body:} \texttt{\{crop\_id, governorate, seedling\_cost, market\_price\}} \\
+ & & \textit{Returns:} Decision, period info, weather forecast, AI explanation \\
+\midrule
+GET & \texttt{/api/v1/decisions/history} & Retrieve farmer's decision history (paginated) \\
+ & & \textit{Auth:} JWT required \\
+\midrule
+POST & \texttt{/api/v1/decisions/record-outcome} & Submit planting outcome \\
+ & & \textit{Body:} \texttt{\{decision\_id, outcome, yield\_kg\_ha, notes\}} \\
+\bottomrule
+\end{tabularx}
+\caption{Decision Engine Endpoints}
+\label{tab:decision_endpoints}
+\end{table}
+
+\subsection{Analytics Layer}
+
+\begin{table}[H]
+\centering
+\small
+\renewcommand{\arraystretch}{1.5}
+\begin{tabularx}{\textwidth}{@{}llX@{}}
+\toprule
+\textbf{Method} & \textbf{Endpoint} & \textbf{Description} \\
+\midrule
+GET & \texttt{/api/v1/analytics/personal} & Personal dashboard metrics \\
+ & & \textit{Returns:} AES, RAR, CVS, DRS, trends, smart summary \\
+\midrule
+GET & \texttt{/api/v1/analytics/regional/\{gov\}} & Regional benchmarks for governorate \\
+ & & \textit{Returns:} Success rates, top crops, RCPS matrix \\
+\midrule
+GET & \texttt{/api/v1/analytics/trends} & Performance trends over time \\
+ & & \textit{Query params:} \texttt{?timeframe=monthly|weekly|agrarian} \\
+\bottomrule
+\end{tabularx}
+\caption{Analytics Layer Endpoints}
+\label{tab:analytics_endpoints}
+\end{table}
+
+\subsection{Administrative Layer (Secured)}
+
+\begin{table}[H]
+\centering
+\small
+\renewcommand{\arraystretch}{1.5}
+\begin{tabularx}{\textwidth}{@{}llX@{}}
+\toprule
+\textbf{Method} & \textbf{Endpoint} & \textbf{Description} \\
+\midrule
+POST & \texttt{/api/v1/admin/login} & Admin authentication \\
+ & & \textit{Returns:} JWT access token (24h expiry) \\
+\midrule
+GET & \texttt{/api/v1/admin/outcomes/pending} & Queue of unvalidated outcomes \\
+ & & \textit{Auth:} Admin JWT required \\
+\midrule
+POST & \texttt{/api/v1/admin/outcomes/\{id\}/approve} & Approve outcome submission \\
+\midrule
+DELETE & \texttt{/api/v1/admin/outcomes/\{id\}/reject} & Reject invalid outcome \\
+\midrule
+POST & \texttt{/api/v1/admin/crops} & Add new crop to system \\
+ & & \textit{Body:} Crop metadata, thermal thresholds \\
+\bottomrule
+\end{tabularx}
+\caption{Administrative Endpoints (JWT Protected)}
+\label{tab:admin_endpoints}
+\end{table}
+
+\section{Request/Response Examples}
+
+\subsection{Example 1: Get Planting Advice}
+
+\textbf{Request:}
+\begin{lstlisting}[language=bash]
+POST /api/v1/decisions/get-advice
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+{
+  "crop_id": 1,
+  "governorate": "Sfax",
+  "seedling_cost": 0.5,
+  "market_price": 2.5,
+  "input_quantity": 100
+}
+\end{lstlisting}
+
+\textbf{Response (200 OK):}
+\begin{lstlisting}[language=json]
+{
+  "id": 1234,
+  "decision": {
+    "action": "PLANT_NOW",
+    "confidence": "HIGH",
+    "reason": "Optimal period with favorable weather.",
+    "wait_days": 0
+  },
+  "period": {
+    "id": "P4",
+    "name": "Spring Stability",
+    "risk": "medium",
+    "description": "Optimal for spring crops..."
+  },
+  "weather_forecast": [
+    {
+      "date": "2026-03-20",
+      "temp_min": 12.5,
+      "temp_max": 22.3,
+      "temp_avg": 17.4,
+      "rainfall": 0.0,
+      "humidity": 65
+    }
+  ],
+  "weather_analysis": {
+    "risks": [],
+    "avg_temp": 17.4,
+    "risk_count": 0
+  },
+  "explanation": "الوقت مناسب للزراعة..."
+}
+\end{lstlisting}
+
+\subsection{Example 2: Get Analytics Dashboard}
+
+\textbf{Request:}
+\begin{lstlisting}[language=bash]
+GET /api/v1/analytics/personal
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+\end{lstlisting}
+
+\textbf{Response (200 OK):}
+\begin{lstlisting}[language=json]
+{
+  "success_rate": 0.68,
+  "total_decisions": 24,
+  "outcome_count": 18,
+  "advice_effectiveness_score": {
+    "score": 0.72,
+    "confidence_interval": [0.58, 0.84],
+    "method": "bayesian_wilson_hybrid",
+    "interpretation": "Good performance..."
+  },
+  "risk_avoidance_roi": {
+    "total_saved_tnd": 1250.50,
+    "risks_avoided": 5,
+    "interpretation": "System prevented 5 risky plantings"
+  },
+  "performance_trends": [
+    {"period": "2025-Q4", "success_rate": 0.75},
+    {"period": "2026-Q1", "success_rate": 0.68}
+  ],
+  "smart_summary": "Your farming performance is above regional average..."
+}
+\end{lstlisting}
+
+\section{Error Handling}
+
+\subsection{HTTP Status Codes}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\textwidth}{@{}lX@{}}
+\toprule
+\textbf{Code} & \textbf{Description} \\
+\midrule
+200 OK & Successful request (data retrieval, filtering) \\
+201 Created & New resource successfully created (decision, outcome) \\
+400 Bad Request & Invalid client input (missing fields, wrong types) \\
+401 Unauthorized & Missing, expired, or invalid JWT token \\
+403 Forbidden & Access denied (insufficient permissions) \\
+404 Not Found & Requested resource does not exist \\
+422 Unprocessable Entity & Validation error (Marshmallow schema failure) \\
+429 Too Many Requests & Rate limit exceeded (500/hr voting, 20/hr AI) \\
+500 Internal Server Error & Server-side or external API failure \\
+\bottomrule
+\end{tabularx}
+\caption{HTTP Status Codes Used in AgriDecision-TN API}
+\label{tab:status_codes}
+\end{table}
+
+\subsection{Error Response Format}
+
+All errors return a standardized JSON structure:
+\begin{lstlisting}[language=json]
+{
+  "error": {
+    "code": "INVALID_CROP_ID",
+    "message": "Crop ID 999 does not exist",
+    "details": {
+      "field": "crop_id",
+      "provided_value": 999,
+      "valid_range": "1-15"
+    }
+  }
+}
+\end{lstlisting}
+
+\section{API Security}
+
+\subsection{Authentication Flow}
+
+\begin{enumerate}
+    \item User submits credentials to \texttt{POST /api/v1/auth/login}
+    \item Backend verifies hashed password (PBKDF2-SHA256)
+    \item JWT access token issued (24-hour expiry)
+    \item Token included in subsequent requests via \texttt{Authorization: Bearer <token>}
+    \item Invalid/expired tokens return \texttt{401 Unauthorized}
+\end{enumerate}
+
+\subsection{Rate Limiting Strategy}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\textwidth}{@{}lXl@{}}
+\toprule
+\textbf{Endpoint Category} & \textbf{Limit} & \textbf{Window} \\
+\midrule
+Public Content (crops, periods) & 1000 requests & 1 hour \\
+Decision Engine & 100 requests & 1 hour \\
+Analytics Dashboard & 200 requests & 1 hour \\
+AI Explanation & 20 requests & 1 hour \\
+Admin Operations & 500 requests & 1 hour \\
+\bottomrule
+\end{tabularx}
+\caption{Rate Limiting Configuration by Endpoint Category}
+\label{tab:rate_limits}
+\end{table}
+
+\section{API Documentation}
+
+The API features \textbf{OpenAPI 3.0} documentation via \texttt{flask-smorest}, providing:
+\begin{itemize}
+    \item Live interactive UI at \texttt{/swagger-ui/}
+    \item Strictly defined schemas for all endpoints
+    \item Testable requests directly from browser
+    \item Auto-generated client SDKs (Python, JavaScript)
+\end{itemize}

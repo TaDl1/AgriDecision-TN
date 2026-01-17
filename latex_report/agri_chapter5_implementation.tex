@@ -1,0 +1,397 @@
+\section*{\centering \Huge \textbf{Chapter 5: IMPLEMENTATION}}
+\vspace{2cm}
+\addcontentsline{toc}{chapter}{Chapter 5: Implementation and Technical Details}
+
+\section{Backend Implementation}
+
+\subsection{Bayesian-Wilson Statistical Engine}
+
+The core innovation of AgriDecision-TN lies in its statistical methodology for handling sparse farmer data.
+
+\subsubsection{Mathematical Foundation}
+
+\textbf{Problem:} Smallholder farmers have insufficient historical decisions (n<10) for reliable frequentist confidence intervals.
+
+\textbf{Solution:} Hybrid approach combining Bayesian priors with Wilson Score Intervals.
+
+\textbf{Step 1: Bayesian Posterior Estimation}
+
+\begin{lstlisting}[language=Python]
+def bayesian_success_rate(successes, total, alpha=2, beta=2):
+    """
+    Beta-Binomial conjugate prior for success rate estimation
+    
+    Prior: Beta(alpha=2, beta=2) represents "cautious neutrality"
+    - Equivalent to observing 2 successes in 4 trials
+    - Mode at theta=0.5, variance=1/20
+    
+    Posterior: Beta(alpha+k, beta+n-k)
+    """
+    posterior_alpha = alpha + successes
+    posterior_beta = beta + (total - successes)
+    
+    # Posterior mean (Bayesian point estimate)
+    posterior_mean = posterior_alpha / (posterior_alpha + posterior_beta)
+    
+    return posterior_mean
+
+# Example: Farmer with 3 successes in 4 attempts
+# Frequentist: p_hat = 3/4 = 0.75
+# Bayesian: p_hat = (3+2)/(4+4) = 5/8 = 0.625 (dampened toward 0.5)
+\end{lstlisting}
+
+\textbf{Step 2: Wilson Score Interval}
+
+\begin{lstlisting}[language=Python]
+import scipy.stats as stats
+import numpy as np
+
+def wilson_score_interval(successes, total, confidence=0.95):
+    """
+    Wilson Score Interval for proportion confidence bounds
+    
+    Superior to normal approximation for small samples:
+    - Handles p_hat=0 and p_hat=1 gracefully
+    - Asymmetric intervals (realistic for proportions)
+    - Coverage probability closer to nominal (95%)
+    """
+    if total == 0:
+        return 0.0, 1.0
+    
+    p_hat = successes / total
+    z = stats.norm.ppf((1 + confidence) / 2)  # 1.96 for 95%
+    
+    denominator = 1 + z**2 / total
+    center = (p_hat + z**2 / (2 * total)) / denominator
+    margin = z * np.sqrt((p_hat * (1 - p_hat) / total + 
+                          z**2 / (4 * total**2))) / denominator
+    
+    lower = max(0, center - margin)
+    upper = min(1, center + margin)
+    
+    return lower, upper
+
+# Example: 3 successes in 4 attempts
+# Wilson 95% CI: [0.28, 0.89]
+# Conservative estimate: max(0.05, 0.28) = 0.28 (28% confidence)
+\end{lstlisting}
+
+\textbf{Step 3: Hybrid Decision Logic}
+
+\begin{lstlisting}[language=Python]
+def get_conservative_success_rate(successes, total):
+    """
+    AgriDecision-TN Hybrid Estimator:
+    1. Bayesian posterior for point estimate
+    2. Wilson lower bound for conservative confidence
+    3. Floor at 5% to avoid zero-confidence paralysis
+    """
+    if total == 0:
+        return {
+            'point_estimate': 0.50,  # Neutral prior
+            'confidence_interval': (0.05, 0.95),
+            'conservative_score': 0.05,
+            'method': 'no_data_prior'
+        }
+    
+    # Bayesian point estimate
+    bayesian_mean = bayesian_success_rate(successes, total, alpha=2, beta=2)
+    
+    # Wilson confidence interval
+    wilson_lower, wilson_upper = wilson_score_interval(successes, total, 
+                                                        confidence=0.95)
+    
+    # Use lower bound for risk-averse decision-making
+    conservative_estimate = max(0.05, wilson_lower)
+    
+    return {
+        'point_estimate': bayesian_mean,
+        'confidence_interval': (wilson_lower, wilson_upper),
+        'conservative_score': conservative_estimate,
+        'method': 'bayesian_wilson_hybrid',
+        'sample_size': total
+    }
+\end{lstlisting}
+
+\subsection{Decision Engine Implementation}
+
+\begin{lstlisting}[language=Python]
+class DecisionEngine:
+    """Core decision-making engine"""
+    
+    def get_advice(self, farmer_id, crop_id, governorate, 
+                   seedling_cost=None, market_price=None):
+        # Step 1: Determine current agrarian period
+        current_period = self._get_current_period()
+        
+        # Step 2: Get crop-specific rules for this period
+        rule = CropPeriodRule.query.filter_by(
+            crop_id=crop_id,
+            period_id=current_period.id
+        ).first()
+        
+        # Step 3: Get weather forecast
+        weather_forecast = self.weather_service.get_forecast(
+            governorate, days=7
+        )
+        
+        # Step 4: Analyze weather against crop requirements
+        weather_analysis = self._analyze_weather(weather_forecast, crop_id)
+        
+        # Step 5: Make decision based on rules + weather
+        decision = self._make_decision(rule, weather_analysis)
+        
+        # Step 6: Generate AI explanation
+        crop = Crop.query.get(crop_id)
+        explanation = self.ai_service.generate_explanation({
+            'crop_name': crop.name,
+            'action': decision['action'],
+            'period_name': current_period.name,
+            'risks': [r['type'] for r in weather_analysis['risks']]
+        })
+        
+        # Step 7: Record decision in database
+        decision_id = self._record_decision(
+            farmer_id, crop_id, governorate,
+            decision, explanation, current_period.id,
+            weather_analysis, seedling_cost, market_price
+        )
+        
+        return {
+            'id': decision_id,
+            'decision': decision,
+            'period': {...},
+            'weather_forecast': weather_forecast,
+            'explanation': explanation
+        }
+\end{lstlisting}
+
+\subsection{Weather Service Integration}
+
+\begin{lstlisting}[language=Python]
+class WeatherService:
+    """ECMWF ERA5 + OpenWeatherMap integration"""
+    
+    def get_forecast(self, governorate, days=7):
+        """
+        Fetch 7-day weather forecast with fallback strategy
+        1. Try ECMWF ERA5 (primary, free, 10km resolution)
+        2. Fallback to OpenWeatherMap (secondary, 3-hour updates)
+        3. Return cached forecast if both fail (graceful degradation)
+        """
+        try:
+            # Primary: ECMWF ERA5
+            forecast = self._fetch_ecmwf(governorate, days)
+            self._cache_forecast(governorate, forecast, ttl=6*3600)  # 6h
+            return forecast
+        except ECMWFAPIError:
+            logger.warning("ECMWF unavailable, trying OpenWeatherMap")
+            try:
+                # Secondary: OpenWeatherMap
+                forecast = self._fetch_openweathermap(governorate, days)
+                return forecast
+            except OWMAPIError:
+                logger.error("All weather APIs failed, using cache")
+                # Tertiary: Cached forecast
+                return self._get_cached_forecast(governorate)
+    
+    def _fetch_ecmwf(self, governorate, days):
+        """Query ECMWF ERA5 for governorate centroid"""
+        coords = self._get_governorate_coords(governorate)
+        
+        params = {
+            'product_type': 'forecast',
+            'variable': ['2m_temperature', 'total_precipitation'],
+            'area': [coords['lat']+0.1, coords['lon']-0.1, 
+                     coords['lat']-0.1, coords['lon']+0.1],
+            'date': f"{datetime.now():%Y-%m-%d}",
+            'time': '00:00',
+            'step': list(range(0, days*24, 6))  # 6-hour intervals
+        }
+        
+        response = requests.post(ECMWF_API_URL, json=params)
+        return self._parse_grib_data(response.content)
+\end{lstlisting}
+
+\section{Frontend Implementation}
+
+\subsection{Component Architecture}
+
+\begin{lstlisting}[language=JavaScript]
+// src/components/AdviceScreen.jsx
+import { useState, useEffect } from 'react';
+import axios from 'axios';
+
+function AdviceScreen() {
+  const [crops, setCrops] = useState([]);
+  const [selectedCrop, setSelectedCrop] = useState(null);
+  const [advice, setAdvice] = useState(null);
+  const [loading, setLoading] = useState(false);
+  
+  useEffect(() => {
+    // Fetch available crops on mount
+    axios.get('/api/v1/crops')
+      .then(res => setCrops(res.data))
+      .catch(err => console.error(err));
+  }, []);
+  
+  const handleGetAdvice = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.post('/api/v1/decisions/get-advice', {
+        crop_id: selectedCrop.id,
+        governorate: user.governorate,
+        seedling_cost: parseFloat(seedlingCost),
+        market_price: parseFloat(marketPrice)
+      });
+      setAdvice(response.data);
+    } catch (error) {
+      console.error('Failed to get advice:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  return (
+    <div className="advice-container">
+      {/* Crop selection UI */}
+      {/* Financial inputs */}
+      {/* Advice display */}
+    </div>
+  );
+}
+\end{lstlisting}
+
+\subsection{Axios Interceptor for JWT}
+
+\begin{lstlisting}[language=JavaScript]
+// src/services/api.js
+import axios from 'axios';
+
+const api = axios.create({
+  baseURL: 'http://localhost:5000/api/v1',
+  timeout: 10000,
+});
+
+// Request interceptor: Inject JWT token
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// Response interceptor: Handle 401 Unauthorized
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
+export default api;
+\end{lstlisting}
+
+\section{Database Optimization}
+
+\subsection{Indexing Strategy}
+
+\begin{lstlisting}[language=SQL]
+-- Composite index for frequent decision queries
+CREATE INDEX idx_decisions_farmer_date 
+ON decisions(farmer_id, decision_date DESC);
+
+-- Index for regional analytics
+CREATE INDEX idx_decisions_governorate_crop 
+ON decisions(governorate_id, crop_id);
+
+-- Index for agrarian period filtering
+CREATE INDEX idx_decisions_period 
+ON decisions(period_id);
+
+-- Spatial index for governorate geometries (PostGIS)
+CREATE INDEX idx_governorates_geom 
+ON governorates USING GIST(polygon);
+\end{lstlisting}
+
+\subsection{Materialized Views for Analytics}
+
+\begin{lstlisting}[language=SQL]
+-- Pre-computed regional success rates
+CREATE MATERIALIZED VIEW regional_success_rates AS
+SELECT 
+    g.name AS governorate,
+    c.name AS crop,
+    COUNT(*) AS total_decisions,
+    SUM(CASE WHEN o.outcome = 'success' THEN 1 ELSE 0 END) AS successes,
+    AVG(CASE WHEN o.outcome = 'success' THEN 1.0 ELSE 0.0 END) AS success_rate
+FROM decisions d
+JOIN governorates g ON d.governorate_id = g.id
+JOIN crops c ON d.crop_id = c.id
+LEFT JOIN outcomes o ON d.id = o.decision_id
+WHERE o.outcome IS NOT NULL
+GROUP BY g.name, c.name
+HAVING COUNT(*) >= 5;  -- k-anonymity threshold
+
+-- Refresh daily at 2 AM
+CREATE OR REPLACE FUNCTION refresh_regional_stats()
+RETURNS void AS $$
+BEGIN
+    REFRESH MATERIALIZED VIEW regional_success_rates;
+END;
+$$ LANGUAGE plpgsql;
+\end{lstlisting}
+
+\section{Deployment Configuration}
+
+\subsection{Docker Compose Setup}
+
+\begin{lstlisting}[language=yaml]
+# docker-compose.yml
+version: '3.8'
+
+services:
+  frontend:
+    build: ./frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    environment:
+      - VITE_API_URL=http://backend:5000
+
+  backend:
+    build: ./backend
+    ports:
+      - "5000:5000"
+    depends_on:
+      - database
+    environment:
+      - DATABASE_URL=postgresql://user:pass@database:5432/agridecision
+      - JWT_SECRET_KEY=${JWT_SECRET}
+      - ECMWF_API_KEY=${ECMWF_KEY}
+    volumes:
+      - ./backend:/app
+
+  database:
+    image: postgis/postgis:14-3.3
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=agri_user
+      - POSTGRES_PASSWORD=secure_password
+      - POSTGRES_DB=agridecision
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
+\end{lstlisting}

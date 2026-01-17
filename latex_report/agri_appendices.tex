@@ -1,0 +1,293 @@
+\section*{\centering \Huge \textbf{APPENDICES}}
+\vspace{2cm}
+\addcontentsline{toc}{chapter}{Appendices}
+
+\section{Appendix A: API Error Catalogue \& Status Codes}
+
+\subsection{HTTP Status Codes}
+
+\begin{table}[H]
+\centering
+\small
+\renewcommand{\arraystretch}{1.5}
+\begin{tabularx}{\textwidth}{@{}lX@{}}
+\toprule
+\textbf{HTTP Code} & \textbf{Description} \\
+\midrule
+200 OK & Successful request (data retrieval, filtering) \\
+201 Created & New resource successfully created (decision, outcome) \\
+400 Bad Request & Invalid client input (missing fields, wrong data types) \\
+401 Unauthorized & Missing, expired, or invalid JWT token \\
+403 Forbidden & Access denied (insufficient permissions for admin action) \\
+404 Not Found & Requested resource does not exist (crop, decision, farmer) \\
+422 Unprocessable Entity & Validation error (Marshmallow schema failure) \\
+429 Too Many Requests & Rate limit exceeded (500/hr voting, 20/hr AI) \\
+500 Internal Server Error & Server-side or external API failure (ECMWF down) \\
+503 Service Unavailable & Temporary maintenance or overload \\
+\bottomrule
+\end{tabularx}
+\caption{Complete List of HTTP Status Codes Returned by AgriDecision-TN API}
+\label{tab:appendix_status_codes}
+\end{table}
+
+\subsection{Common Error Codes}
+
+\begin{table}[H]
+\centering
+\small
+\renewcommand{\arraystretch}{1.5}
+\begin{tabularx}{\textwidth}{@{}llX@{}}
+\toprule
+\textbf{Error Code} & \textbf{HTTP Status} & \textbf{Description} \\
+\midrule
+\texttt{INVALID\_CROP\_ID} & 404 & Crop ID does not exist in database \\
+\texttt{INVALID\_GOVERNORATE} & 400 & Governorate name not in 24 valid options \\
+\texttt{MISSING\_JWT\_TOKEN} & 401 & Authorization header missing \\
+\texttt{EXPIRED\_JWT\_TOKEN} & 401 & Token expired (>24 hours old) \\
+\texttt{INSUFFICIENT\_PERMISSIONS} & 403 & Non-admin attempting admin action \\
+\texttt{VALIDATION\_ERROR} & 422 & Request body fails Marshmallow validation \\
+\texttt{RATE\_LIMIT\_EXCEEDED} & 429 & Too many requests from IP address \\
+\texttt{ECMWF\_API\_FAILURE} & 500 & External weather API unavailable \\
+\texttt{DATABASE\_ERROR} & 500 & PostgreSQL connection or query failure \\
+\bottomrule
+\end{tabularx}
+\caption{Application-Specific Error Codes}
+\label{tab:appendix_error_codes}
+\end{table}
+
+\section{Appendix B: Authentication \& Security Guide}
+
+\subsection{JWT Token Structure}
+
+\begin{lstlisting}[language=json]
+{
+  "header": {
+    "alg": "HS256",
+    "typ": "JWT"
+  },
+  "payload": {
+    "sub": 123,  // farmer_id
+    "username": "farmer_sfax",
+    "governorate": "Sfax",
+    "iat": 1705420800,  // issued at (Unix timestamp)
+    "exp": 1705507200   // expires at (24h later)
+  },
+  "signature": "HMACSHA256(base64UrlEncode(header) + '.' + 
+                base64UrlEncode(payload), secret)"
+}
+\end{lstlisting}
+
+\subsection{Password Hashing}
+
+\textbf{Algorithm}: PBKDF2-SHA256 with 260,000 iterations
+
+\begin{lstlisting}[language=Python]
+from werkzeug.security import generate_password_hash, check_password_hash
+
+# Registration
+hashed_password = generate_password_hash(
+    'farmer_password_123',
+    method='pbkdf2:sha256:260000'
+)
+# Stored in database: pbkdf2:sha256:260000$salt$hash
+
+# Login verification
+is_valid = check_password_hash(hashed_password, 'farmer_password_123')
+# Returns: True
+\end{lstlisting}
+
+\subsection{Sensitive Data Handling}
+
+All sensitive configuration stored in environment variables:
+
+\begin{lstlisting}[language=bash]
+# .env file (never committed to Git)
+DATABASE_URL=postgresql://user:pass@localhost:5432/agridecision
+JWT_SECRET_KEY=your-256-bit-secret-key-here
+ECMWF_API_KEY=your-ecmwf-api-key
+OPENWEATHERMAP_API_KEY=your-owm-api-key
+GEMINI_API_KEY=your-google-gemini-key
+\end{lstlisting}
+
+\section{Appendix C: Database Schema Details}
+
+\subsection{Complete Table Definitions}
+
+\begin{lstlisting}[language=SQL]
+-- Farmers table
+CREATE TABLE farmers (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(80) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    phone_number VARCHAR(20) UNIQUE NOT NULL,
+    governorate VARCHAR(50) NOT NULL,
+    farm_type VARCHAR(50),
+    privacy_level INTEGER DEFAULT 2,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Crops table
+CREATE TABLE crops (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) UNIQUE NOT NULL,
+    name_arabic VARCHAR(100),
+    category VARCHAR(50) NOT NULL,
+    min_temp FLOAT NOT NULL,
+    max_temp FLOAT NOT NULL,
+    gdd_requirement INTEGER,
+    frost_sensitivity INTEGER,
+    description TEXT
+);
+
+-- Agrarian Periods table
+CREATE TABLE agrarian_periods (
+    id VARCHAR(10) PRIMARY KEY,
+    name_arabic VARCHAR(100) NOT NULL,
+    name_french VARCHAR(100),
+    name_english VARCHAR(100),
+    start_month INTEGER NOT NULL,
+    start_day INTEGER NOT NULL,
+    end_month INTEGER NOT NULL,
+    end_day INTEGER NOT NULL,
+    soil_temp_min FLOAT,
+    air_temp_avg_min FLOAT,
+    air_temp_avg_max FLOAT,
+    frost_probability_max FLOAT,
+    soil_moisture_min FLOAT,
+    risk_level VARCHAR(20),
+    description TEXT
+);
+
+-- Decisions table (Fact table)
+CREATE TABLE decisions (
+    id SERIAL PRIMARY KEY,
+    farmer_id INTEGER REFERENCES farmers(id) ON DELETE CASCADE,
+    crop_id INTEGER REFERENCES crops(id),
+    governorate_id INTEGER REFERENCES governorates(id),
+    period_id VARCHAR(10) REFERENCES agrarian_periods(id),
+    decision_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    recommendation VARCHAR(50) NOT NULL,
+    confidence VARCHAR(20) NOT NULL,
+    wait_days INTEGER DEFAULT 0,
+    weather_temp_avg FLOAT,
+    weather_temp_min FLOAT,
+    weather_temp_max FLOAT,
+    weather_humidity FLOAT,
+    weather_rainfall FLOAT,
+    weather_risks TEXT,
+    seedling_cost_tnd FLOAT,
+    market_price_tnd FLOAT,
+    input_quantity FLOAT DEFAULT 1.0,
+    explanation TEXT
+);
+
+-- Outcomes table
+CREATE TABLE outcomes (
+    id SERIAL PRIMARY KEY,
+    decision_id INTEGER REFERENCES decisions(id) ON DELETE CASCADE,
+    outcome VARCHAR(20) NOT NULL,
+    yield_kg_ha FLOAT,
+    revenue_tnd FLOAT,
+    notes TEXT,
+    recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+\end{lstlisting}
+
+\section{Appendix D: Bayesian-Wilson Mathematical Derivation}
+
+\subsection{Beta-Binomial Conjugate Prior}
+
+\textbf{Prior Distribution}:
+\[
+p(\theta) = \text{Beta}(\alpha, \beta) = \frac{\Gamma(\alpha + \beta)}{\Gamma(\alpha)\Gamma(\beta)} \theta^{\alpha-1}(1-\theta)^{\beta-1}
+\]
+
+\textbf{Likelihood}:
+\[
+p(k | n, \theta) = \binom{n}{k} \theta^k (1-\theta)^{n-k}
+\]
+
+\textbf{Posterior Distribution}:
+\[
+p(\theta | k, n) = \text{Beta}(\alpha + k, \beta + n - k)
+\]
+
+\textbf{Posterior Mean}:
+\[
+\mathbb{E}[\theta | k, n] = \frac{\alpha + k}{\alpha + \beta + n}
+\]
+
+\textbf{For AgriDecision-TN} ($\alpha = \beta = 2$):
+\[
+\mathbb{E}[\theta | k, n] = \frac{k + 2}{n + 4}
+\]
+
+\subsection{Wilson Score Interval}
+
+\textbf{Formula}:
+\[
+\frac{\hat{p} + \frac{z^2}{2n} \pm z\sqrt{\frac{\hat{p}(1-\hat{p})}{n} + \frac{z^2}{4n^2}}}{1 + \frac{z^2}{n}}
+\]
+
+Where:
+\begin{itemize}
+    \item $\hat{p} = k/n$ (sample proportion)
+    \item $z = 1.96$ (for 95\% confidence)
+    \item $n$ = sample size
+\end{itemize}
+
+\section{Appendix E: Agrarian Calendar Details}
+
+\begin{table}[H]
+\centering
+\tiny
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{\textwidth}{@{}lXllll@{}}
+\toprule
+\textbf{Period} & \textbf{Name (Arabic)} & \textbf{Dates} & \textbf{Soil Temp} & \textbf{Frost Risk} & \textbf{Risk Level} \\
+\midrule
+P1 & الليالي البيض & Dec 25 - Jan 13 & 5°C & <10\% & Low \\
+P2 & الليالي السود & Jan 14 - Feb 2 & 4°C & 15\% & Medium \\
+P3 & العذارة & Feb 3 - Feb 13 & 6°C & 12\% & Medium \\
+P4 & قرة الصيف & Feb 14 - Mar 14 & 8°C & 8\% & Low \\
+P5 & الربيع & Mar 15 - Apr 30 & 12°C & 5\% & Low \\
+P6 & الصيف المبكر & May 1 - Jun 15 & 18°C & 0\% & Medium \\
+P7 & ذروة الصيف & Jun 16 - Aug 31 & 25°C & 0\% & High \\
+P8 & الخريف & Sep 1 - Oct 15 & 20°C & 0\% & Low \\
+P9 & ما قبل الشتاء & Oct 16 - Nov 30 & 14°C & 2\% & Low \\
+P10 & الشتاء المبكر & Dec 1 - Dec 24 & 8°C & 8\% & Medium \\
+\bottomrule
+\end{tabularx}
+\caption{Complete Agrarian Calendar with Thermal Thresholds}
+\label{tab:appendix_agrarian_calendar}
+\end{table}
+
+\section{Appendix F: Deployment Checklist}
+
+\subsection{Pre-Deployment}
+\begin{itemize}
+    \item[$\square$] All tests passing (pytest coverage >90\%)
+    \item[$\square$] Environment variables configured in \texttt{.env}
+    \item[$\square$] Database migrations applied
+    \item[$\square$] API documentation updated (Swagger UI)
+    \item[$\square$] Frontend build optimized (Vite production build)
+    \item[$\square$] Docker images built and tagged
+\end{itemize}
+
+\subsection{Deployment}
+\begin{itemize}
+    \item[$\square$] Docker Compose up on production server
+    \item[$\square$] Database backup created
+    \item[$\square$] SSL/TLS certificates installed (Let's Encrypt)
+    \item[$\square$] Firewall rules configured (ports 80, 443, 5432)
+    \item[$\square$] Monitoring enabled (Prometheus + Grafana)
+\end{itemize}
+
+\subsection{Post-Deployment}
+\begin{itemize}
+    \item[$\square$] Health check endpoint verified (\texttt{/api/v1/health})
+    \item[$\square$] Sample API requests tested (Insomnia collection)
+    \item[$\square$] Frontend accessible and responsive
+    \item[$\square$] Database connections stable
+    \item[$\square$] Logs monitored for errors
+\end{itemize}

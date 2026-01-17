@@ -1,0 +1,184 @@
+\section*{\centering \Huge \textbf{RECOMMENDATIONS}}
+\vspace{2cm}
+
+\section{Future Enhancements}
+
+To further enhance the AgriDecision-TN platform and expand its impact, the following recommendations are proposed:
+
+\subsection{AI \& Content Governance}
+
+\subsubsection{LLM-Assisted Moderation}
+\textbf{Objective}: Automate content screening for user-submitted outcomes to reduce moderator workload by 80\%.
+
+\textbf{Implementation}:
+\begin{itemize}
+    \item Integrate Google Gemini 1.5 Flash for automated sentiment analysis
+    \item Flag submissions with extreme sentiment, profanity, or implausible data
+    \item Auto-approve neutral/negative outcomes with high validity scores
+    \item Queue suspicious content for human review
+\end{itemize}
+
+\textbf{Expected Impact}: Reduce moderation time from 5 minutes/submission to 1 minute, enabling faster feedback loops.
+
+\subsubsection{Multilingual Support}
+\textbf{Objective}: Expand accessibility to non-Derja speakers (Standard Arabic, French, Berber).
+
+\textbf{Implementation}:
+\begin{itemize}
+    \item Fine-tune mT5 model on Tunisian dialect corpus for Derja → Standard Arabic translation
+    \item Integrate Google Translate API for French/Berber
+    \item Implement language detection for automatic interface switching
+\end{itemize}
+
+\textbf{Challenge}: Derja lacks standardized written form; requires phonetic Arabic script + French loanwords.
+
+\subsection{User Experience \& Cultural Preservation}
+
+\subsubsection{Guest Bookmarking}
+\textbf{Objective}: Allow users to save favorite crops without creating accounts, reducing privacy concerns.
+
+\textbf{Implementation}:
+\begin{lstlisting}[language=JavaScript]
+// Save favorite crops in browser localStorage
+localStorage.setItem('favorites', 
+  JSON.stringify(['olive', 'wheat', 'tomato']));
+\end{lstlisting}
+
+\textbf{Privacy Benefit}: Data never leaves device, no server tracking.
+
+\subsubsection{Oral Heritage Audio}
+\textbf{Objective}: Capture traditional proverbs and farmer stories in audio format to preserve oral tradition.
+
+\textbf{Implementation}:
+\begin{itemize}
+    \item Speech-to-Text: OpenAI Whisper (supports Arabic dialects)
+    \item Audio storage: Cloudflare R2 (S3-compatible, cheaper than AWS)
+    \item Playback: HTML5 audio player with transcripts
+\end{itemize}
+
+\textbf{Example Use Case}:
+\begin{itemize}
+    \item Audio: Elderly farmer explaining "El Llayeli El Bidh" in Derja
+    \item Transcript: Phonetic Arabic + French translation
+    \item Linked to: P1 agrarian period in database
+\end{itemize}
+
+\subsection{Security \& Integrity}
+
+\subsubsection{Bot Protection}
+\textbf{Objective}: Protect public joke submission endpoint from spam bots.
+
+\textbf{Implementation}:
+\begin{itemize}
+    \item Use Cloudflare Turnstile (privacy-preserving CAPTCHA)
+    \item Advantages over reCAPTCHA: No Google tracking, invisible for most users, GDPR-compliant
+\end{itemize}
+
+\subsubsection{Admin Hardening}
+\textbf{Objective}: Prevent account takeover even if password leaked.
+
+\textbf{Implementation}:
+\begin{itemize}
+    \item Multi-Factor Authentication (TOTP) using PyOTP library
+    \item Workflow:
+    \begin{enumerate}
+        \item Admin enables MFA in settings
+        \item System generates QR code (Google Authenticator compatible)
+        \item Admin scans QR code, enters 6-digit code
+        \item System verifies TOTP, stores secret (encrypted)
+        \item Future logins require: password + TOTP code
+    \end{enumerate}
+\end{itemize}
+
+\subsection{Advanced Analytics}
+
+\subsubsection{Satellite Imagery Integration}
+\textbf{Objective}: Validate farmer-reported outcomes with NDVI (vegetation health).
+
+\textbf{Data Source}: Sentinel-2 (ESA, free, 10m resolution, 5-day revisit)
+
+\textbf{Workflow}:
+\begin{enumerate}
+    \item Farmer reports: "Planted wheat on Oct 15, successful harvest"
+    \item System queries Sentinel-2 API for farm coordinates (Oct 15 - May 15)
+    \item Calculate NDVI time series: NDVI = (NIR - Red) / (NIR + Red)
+    \item Validate: NDVI > 0.6 during growth period → Outcome confirmed
+    \item Flag anomalies: NDVI < 0.3 → Possible crop failure, request clarification
+\end{enumerate}
+
+\textbf{Privacy}: Requires farmer opt-in (Level 4 privacy tier)
+
+\subsubsection{Predictive Crop Yield Modeling}
+\textbf{Objective}: Transition from binary outcome (success/failure) to quantitative yield prediction (kg/ha).
+
+\textbf{Technology}:
+\begin{itemize}
+    \item Machine Learning: XGBoost regression
+    \item Features: Weather (temp, rainfall), Soil (texture, pH), Management (fertilizer, irrigation)
+    \item Training Data: 5,000+ farmer outcomes with reported yields
+\end{itemize}
+
+\textbf{Example Output}:
+\begin{lstlisting}
+Input: Wheat, Beja, planted Nov 5, 50kg/ha fertilizer, rainfed
+Output: Predicted yield = 2,800 kg/ha +/- 400 kg/ha (95% CI)
+\end{lstlisting}
+
+\subsection{Collaboration \& Partnerships}
+
+\subsubsection{Ministry of Agriculture Integration}
+\textbf{Objective}: Official endorsement and national deployment.
+
+\textbf{Proposed Model}:
+\begin{itemize}
+    \item B2B2C partnership: Ministry licenses platform for TND 500,000/year
+    \item Covers 400,000 farmers nationwide
+    \item Integration with extension services (200+ agents use platform)
+\end{itemize}
+
+\subsubsection{Agricultural Insurance API}
+\textbf{Objective}: Provide risk assessment data to insurance companies.
+
+\textbf{Revenue Model}:
+\begin{itemize}
+    \item API licensing: TND 30,000/year per enterprise customer
+    \item Potential customers: 5 insurance companies in Tunisia
+    \item Total revenue: TND 150,000/year
+\end{itemize}
+
+\subsubsection{University Research Partnerships}
+\textbf{Objective}: Enable academic research on climate adaptation.
+
+\textbf{Data Sharing}:
+\begin{itemize}
+    \item Anonymized dataset (k-anonymity k≥5) for research purposes
+    \item Differential privacy guarantees (ε=0.5)
+    \item Collaboration with INRAT, University of Tunis
+\end{itemize}
+
+\section{Scalability Roadmap}
+
+\subsection{Year 1 (2026): Pilot Phase}
+\begin{itemize}
+    \item 3-governorate pilot (Sfax, Béja, Nabeul)
+    \item Target: 3,000 farmers (10\% penetration)
+    \item Focus: Validate 21.9\% loss reduction claim
+\end{itemize}
+
+\subsection{Year 2 (2027): National Rollout}
+\begin{itemize}
+    \item Expand to all 24 governorates
+    \item Target: 69,000 farmers (30\% penetration)
+    \item Revenue: TND 345,000/year (freemium) + TND 150,000/year (API licensing)
+\end{itemize}
+
+\subsection{Year 3 (2028): Regional Expansion}
+\begin{itemize}
+    \item Expand to Algeria and Morocco (2.5M smallholders)
+    \item Adapt agrarian calendar to local contexts
+    \item Target: 250,000 farmers across Maghreb
+\end{itemize}
+
+\vspace{2cm}
+
+\addcontentsline{toc}{chapter}{Recommendations}

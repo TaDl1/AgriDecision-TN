@@ -1,0 +1,440 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2024-01-15T00:00:00.000Z",
+  "__export_source": "insomnia.desktop.app:v2023.5.8",
+  "resources": [
+    {
+      "_id": "wrk_agridecision",
+      "parentId": null,
+      "modified": 1705276800000,
+      "created": 1705276800000,
+      "name": "AgriDecision-TN API",
+      "description": "Complete API testing collection for AgriDecision-TN agricultural decision support system",
+      "scope": "collection",
+      "_type": "workspace"
+    },
+    {
+      "_id": "env_agridecision",
+      "parentId": "wrk_agridecision",
+      "modified": 1705276800000,
+      "created": 1705276800000,
+      "name": "Base Environment",
+      "data": {
+        "base_url": "http://localhost:5000",
+        "api_version": "v1",
+        "token": "",
+        "user_id": "",
+        "test_phone": "21699999999",
+        "test_password": "TestPass123",
+        "test_governorate": "Tunis",
+        "test_crop_id": "1"
+      },
+      "dataPropertyOrder": {
+        "&": [
+          "base_url",
+          "api_version",
+          "token",
+          "user_id",
+          "test_phone",
+          "test_password",
+          "test_governorate",
+          "test_crop_id"
+        ]
+      },
+      "color": null,
+      "isPrivate": false,
+      "metaSortKey": 1705276800000,
+      "_type": "environment"
+    },
+    {
+      "_id": "jar_cookies",
+      "parentId": "wrk_agridecision",
+      "modified": 1705276800000,
+      "created": 1705276800000,
+      "name": "Cookie Jar",
+      "cookies": [],
+      "_type": "cookie_jar"
+    },
+    {
+      "_id": "fld_auth",
+      "parentId": "wrk_agridecision",
+      "modified": 1705276800000,
+      "created": 1705276800000,
+      "name": "01 - Authentication",
+      "description": "User authentication endpoints",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": -1705276800000,
+      "_type": "request_group"
+    },
+    {
+      "_id": "req_register",
+      "parentId": "fld_auth",
+      "modified": 1705276800000,
+      "created": 1705276800000,
+      "url": "{{ _.base_url }}/api/auth/register",
+      "name": "Register New Farmer",
+      "description": "Create a new farmer account",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"phone_number\": \"{{ _.test_phone }}\",\n  \"password\": \"{{ _.test_password }}\",\n  \"governorate\": \"{{ _.test_governorate }}\",\n  \"farm_type\": \"rain_fed\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1705276800000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_login",
+      "parentId": "fld_auth",
+      "modified": 1705276800000,
+      "created": 1705276800000,
+      "url": "{{ _.base_url }}/api/auth/login",
+      "name": "Login",
+      "description": "Login and receive JWT token",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"phone\": \"{{ _.test_phone }}\",\n  \"password\": \"{{ _.test_password }}\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1705276799000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request",
+      "tests": {
+        "results": [],
+        "data": "const response = await res.json();\nif (response.token) {\n  await insomnia.environment.set('token', response.token);\n  await insomnia.environment.set('user_id', response.user.id);\n}"
+      }
+    },
+    {
+      "_id": "req_me",
+      "parentId": "fld_auth",
+      "modified": 1705276800000,
+      "created": 1705276800000,
+      "url": "{{ _.base_url }}/api/auth/me",
+      "name": "Get Current User",
+      "description": "Get authenticated user information",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.token }}"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1705276798000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "fld_crops",
+      "parentId": "wrk_agridecision",
+      "modified": 1705276800000,
+      "created": 1705276800000,
+      "name": "02 - Crops",
+      "description": "Crop information endpoints",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": -1705276700000,
+      "_type": "request_group"
+    },
+    {
+      "_id": "req_get_crops",
+      "parentId": "fld_crops",
+      "modified": 1705276800000,
+      "created": 1705276800000,
+      "url": "{{ _.base_url }}/api/crops/",
+      "name": "Get All Crops",
+      "description": "Retrieve list of all available crops",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {},
+      "metaSortKey": -1705276700000,
+      "isPrivate": false,
+      "_type": "request"
+    },
+    {
+      "_id": "req_get_crop_details",
+      "parentId": "fld_crops",
+      "modified": 1705276800000,
+      "created": 1705276800000,
+      "url": "{{ _.base_url }}/api/crops/{{ _.test_crop_id }}",
+      "name": "Get Crop Details",
+      "description": "Get detailed information about a specific crop",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {},
+      "metaSortKey": -1705276699000,
+      "_type": "request"
+    },
+    {
+      "_id": "req_get_periods",
+      "parentId": "fld_crops",
+      "modified": 1705276800000,
+      "created": 1705276800000,
+      "url": "{{ _.base_url }}/api/crops/periods",
+      "name": "Get Agrarian Periods",
+      "description": "Get all agrarian calendar periods",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {},
+      "metaSortKey": -1705276698000,
+      "_type": "request"
+    },
+    {
+      "_id": "fld_decisions",
+      "parentId": "wrk_agridecision",
+      "modified": 1705276800000,
+      "created": 1705276800000,
+      "name": "03 - Decisions (Main Feature)",
+      "description": "Planting decision endpoints - Core API Mashup",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": -1705276600000,
+      "_type": "request_group"
+    },
+    {
+      "_id": "req_get_advice",
+      "parentId": "fld_decisions",
+      "modified": 1705276800000,
+      "created": 1705276800000,
+      "url": "{{ _.base_url }}/api/decisions/get-advice",
+      "name": "Get Planting Advice (API MASHUP)",
+      "description": "Main endpoint - combines Weather API + AI API + Agrarian Calendar\nThis is the core API mashup functionality",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"crop_id\": {{ _.test_crop_id }},\n  \"governorate\": \"{{ _.test_governorate }}\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.token }}"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1705276600000,
+      "isPrivate": false,
+      "_type": "request"
+    },
+    {
+      "_id": "req_get_history",
+      "parentId": "fld_decisions",
+      "modified": 1705276800000,
+      "created": 1705276800000,
+      "url": "{{ _.base_url }}/api/decisions/history",
+      "name": "Get Decision History",
+      "description": "Retrieve past planting decisions",
+      "method": "GET",
+      "body": {},
+      "parameters": [
+        {
+          "name": "limit",
+          "value": "20"
+        },
+        {
+          "name": "offset",
+          "value": "0"
+        }
+      ],
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.token }}"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1705276599000,
+      "_type": "request"
+    },
+    {
+      "_id": "req_record_outcome",
+      "parentId": "fld_decisions",
+      "modified": 1705276800000,
+      "created": 1705276800000,
+      "url": "{{ _.base_url }}/api/decisions/record-outcome",
+      "name": "Record Outcome",
+      "description": "Record the outcome of a planting decision",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"decision_id\": 1,\n  \"outcome\": \"success\",\n  \"yield_kg\": 450.5,\n  \"revenue_tnd\": 2250.0,\n  \"notes\": \"Excellent harvest, followed advice\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.token }}"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1705276598000,
+      "_type": "request"
+    },
+    {
+      "_id": "fld_analytics",
+      "parentId": "wrk_agridecision",
+      "modified": 1705276800000,
+      "created": 1705276800000,
+      "name": "04 - Analytics",
+      "description": "Analytics and statistics endpoints",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": -1705276500000,
+      "_type": "request_group"
+    },
+    {
+      "_id": "req_personal_analytics",
+      "parentId": "fld_analytics",
+      "modified": 1705276800000,
+      "created": 1705276800000,
+      "url": "{{ _.base_url }}/api/analytics/personal",
+      "name": "Get Personal Analytics",
+      "description": "Get farmer's personal performance analytics",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.token }}"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1705276500000,
+      "_type": "request"
+    },
+    {
+      "_id": "req_advanced_analytics",
+      "parentId": "fld_analytics",
+      "modified": 1705276800000,
+      "created": 1705276800000,
+      "url": "{{ _.base_url }}/api/analytics/advanced",
+      "name": "Get Advanced Analytics",
+      "description": "Get detailed analytics with AI insights",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.token }}"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1705276499000,
+      "_type": "request"
+    },
+    {
+      "_id": "req_system_analytics",
+      "parentId": "fld_analytics",
+      "modified": 1705276800000,
+      "created": 1705276800000,
+      "url": "{{ _.base_url }}/api/analytics/system",
+      "name": "Get System Analytics (Public)",
+      "description": "Get system-wide statistics (no auth required)",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {},
+      "metaSortKey": -1705276498000,
+      "_type": "request"
+    },
+    {
+      "_id": "fld_health",
+      "parentId": "wrk_agridecision",
+      "modified": 1705276800000,
+      "created": 1705276800000,
+      "name": "05 - Health & Monitoring",
+      "description": "System health check endpoints",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": -1705276400000,
+      "_type": "request_group"
+    },
+    {
+      "_id": "req_health",
+      "parentId": "fld_health",
+      "modified": 1705276800000,
+      "created": 1705276800000,
+      "url": "{{ _.base_url }}/api/health",
+      "name": "Health Check",
+      "description": "Basic health check",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {},
+      "metaSortKey": -1705276400000,
+      "_type": "request"
+    },
+    {
+      "_id": "req_root",
+      "parentId": "fld_health",
+      "modified": 1705276800000,
+      "created": 1705276800000,
+      "url": "{{ _.base_url }}/",
+      "name": "Root Endpoint",
+      "description": "API root information",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {},
+      "metaSortKey": -1705276399000,
+      "_type": "request"
+    }
+  ]
+}
