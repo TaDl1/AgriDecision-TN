@@ -5,7 +5,6 @@
 [![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://www.python.org/)
 [![Flask](https://img.shields.io/badge/Flask-3.0-green.svg)](https://flask.palletsprojects.com/)
 [![React](https://img.shields.io/badge/React-18.2-blue.svg)](https://reactjs.org/)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ---
 
@@ -45,7 +44,7 @@ AgriDecision-TN is an intelligent web-based platform that helps Tunisian farmers
 ### Prerequisites
 - Python 3.9+
 - Node.js 16+
-- Docker (optional)
+- Docker 
 
 ### Backend Setup
 ```bash
